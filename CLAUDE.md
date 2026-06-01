@@ -2,11 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project status: design phase
+## Project status: landing page shipped; core app not yet built
 
-There is **no application code yet** — the repo currently contains only the design spec and Claude settings. Nothing is scaffolded, so there are no build/lint/test commands to run. Do not invent them; if you scaffold the app, add the real commands here.
+The **landing page** (Gami World Cup '26 info hub) is built and deployable — a Next.js 14 + TypeScript + Tailwind app scaffolded at the repo root. The core pool app (auth, draft, scoring, admin) is **not built yet** and remains in design.
 
-The canonical, authoritative design lives in `docs/superpowers/specs/2026-05-28-world-cup-pool-design.md`. **Read it before doing any work** — it contains the full feature set, the finalized Postgres data model (as DDL), scoring values, and the list of open questions. When a design decision changes, update that spec; treat it as the source of truth over any summary here.
+Commands:
+- `npm run dev` — local dev server (http://localhost:3000)
+- `npm run build` — production build
+- `npm run lint` — Next.js ESLint
+- `npm test` — Vitest unit tests (currently the countdown logic)
+- Deploy: Vercel (import the GitHub repo, or `npx vercel --prod`)
+
+The canonical, authoritative design lives in `docs/superpowers/specs/2026-05-28-world-cup-pool-design.md`. **Read it before doing any work** — it contains the full feature set, the finalized Postgres data model (as DDL), scoring values, and the list of open questions. The landing page has its own spec + plan under `docs/superpowers/specs/` and `docs/superpowers/plans/`. When a design decision changes, update the relevant spec; treat it as the source of truth over any summary here.
 
 ## What this is
 
