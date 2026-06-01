@@ -1,7 +1,17 @@
+import Hero from "@/components/Hero";
+import HowItWorks from "@/components/HowItWorks";
+import Scoring from "@/components/Scoring";
+import Timeline from "@/components/Timeline";
+import SiteFooter from "@/components/SiteFooter";
+
 export default function Home() {
   return (
-    <main className="min-h-screen grid place-items-center">
-      <p className="text-neon">Gami World Cup '26 — scaffolding works.</p>
+    <main className="mx-auto min-h-screen max-w-md bg-navy">
+      <Hero />
+      <HowItWorks />
+      <Scoring />
+      <Timeline />
+      <SiteFooter />
     </main>
   );
 }
