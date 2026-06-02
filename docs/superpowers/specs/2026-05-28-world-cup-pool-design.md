@@ -14,10 +14,10 @@ A private, password-protected web app for ~8 friends to run a World Cup 2026 bet
 ## Core Features
 
 ### Access & Registration
-- Site is gated behind a single shared password (set as an env var / stored in `game_config`), handed out privately to friends. No per-user invite codes.
+- Site is gated behind a single shared password (env `SITE_PASSWORD`), handed out privately to friends. No per-user invite codes. Passing the gate sets a signed httpOnly cookie (`GATE_TOKEN`); middleware enforces it on all routes except the public landing page (`/`) and `/gate`.
 - The password gate is a thin check in front of the registration/login pages — it just unlocks the ability to create an account, it is not the auth mechanism itself.
-- Each user registers with: unique display name + email/password
-- Supabase Auth handles authentication and sessions once past the gate
+- **Identity = display name + password, no email** (decided 2026-06-02). Friends register/log in with a unique display name + a personal password. A deterministic synthetic email (`<slug>@gami-pool.com`, derived from the name in `lib/identity.ts`) is fed to Supabase Auth so it can key on email and login can reconstruct the address; this synthetic address never receives mail. Forgotten passwords are reset by the admin (no email-based reset). The shared gate keeps strangers out; the per-user account is what attributes draft picks / predictions / scores to each player.
+- Supabase Auth handles authentication and sessions once past the gate. "Confirm email" is disabled (no SMTP needed).
 
 ### Visibility Rules
 Picks and predictions are hidden from other players while a submission phase is open, then revealed when that phase locks:
