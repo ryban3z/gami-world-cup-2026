@@ -10,21 +10,43 @@ export default async function HomePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, is_admin")
-    .eq("id", user.id)
-    .single();
+  const [{ data: me }, { data: players }] = await Promise.all([
+    supabase.from("profiles").select("display_name").eq("id", user.id).single(),
+    supabase
+      .from("profiles")
+      .select("id, display_name")
+      .order("created_at", { ascending: true }),
+  ]);
+
+  const list = players ?? [];
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-4 p-6">
-      <h1 className="text-2xl font-bold">{branding.poolName}</h1>
-      <p>
-        Welcome, <strong>{profile?.display_name ?? "player"}</strong>. The draft
-        hasn&apos;t opened yet — sit tight.
-      </p>
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6">
+      <div>
+        <h1 className="text-2xl font-bold">{branding.poolName}</h1>
+        <p className="mt-2 text-bodytext">
+          Welcome, <strong className="text-white">{me?.display_name ?? "player"}</strong>.
+          The draft hasn&apos;t opened yet — sit tight.
+        </p>
+      </div>
+
+      <section className="rounded-xl border border-glow bg-panel p-4">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-gold">
+          Players registered ({list.length})
+        </h2>
+        <ul className="mt-3 flex flex-col gap-2">
+          {list.map((p) => (
+            <li key={p.id} className="flex items-center gap-2 text-sm">
+              <span className="text-gold">●</span>
+              <span className="text-white">{p.display_name}</span>
+              {p.id === user.id && <span className="text-caption">(you)</span>}
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <form action={signOut}>
-        <button className="text-sm underline">Sign out</button>
+        <button className="text-sm text-caption underline">Sign out</button>
       </form>
     </main>
   );
