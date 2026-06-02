@@ -2,15 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project status: landing page shipped; core app not yet built
+## Project status: landing page shipped; core-app foundation built
 
-The **landing page** (Gami World Cup '26 info hub) is built and deployable — a Next.js 14 + TypeScript + Tailwind app scaffolded at the repo root. The core pool app (auth, draft, scoring, admin) is **not built yet** and remains in design.
+The **landing page** (Gami World Cup '26 info hub) is built and deployed. The **core-app foundation** is now built too: Supabase schema + RLS, seeded teams/categories, a shared-password gate, and Supabase email/password auth (Plan 1 — `docs/superpowers/plans/2026-06-02-pre-tournament-foundation.md`). Still to build: the **snake draft** (Plan 2) and **bonus predictions + lock** (Plan 3), then scoring/ingestion during the group stage. See `docs/superpowers/specs/2026-05-28-world-cup-pool-design.md`.
+
+Setup for the core app lives in `README.md` (env vars, applying migrations, seeding teams). The data model is single-tenant by design — a second group is a separate deploy (branding + site password come from env).
 
 Commands:
 - `npm run dev` — local dev server (http://localhost:3000)
 - `npm run build` — production build
 - `npm run lint` — Next.js ESLint
-- `npm test` — Vitest unit tests (currently the countdown logic)
+- `npm test` — Vitest unit tests (countdown, branding config, gate password check)
 - Deploy: Vercel (import the GitHub repo, or `npx vercel --prod`)
 
 The canonical, authoritative design lives in `docs/superpowers/specs/2026-05-28-world-cup-pool-design.md`. **Read it before doing any work** — it contains the full feature set, the finalized Postgres data model (as DDL), scoring values, and the list of open questions. The landing page has its own spec + plan under `docs/superpowers/specs/` and `docs/superpowers/plans/`. When a design decision changes, update the relevant spec; treat it as the source of truth over any summary here.
