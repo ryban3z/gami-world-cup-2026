@@ -86,9 +86,24 @@ Group-stage scoring is unaffected either way — it is always attributed to whoe
 4. Best Young Player
 5. Tournament Winner (which team lifts the trophy)
 
+### Results Data Source (validated 2026-06-02)
+
+The project's #1 technical risk — "can we actually fetch WC 2026 data on a free tier?" — is **retired**. A wide search plus live probing of no-key endpoints confirmed multiple working sources:
+
+| Source | Key? | What it gives | Verdict |
+|---|---|---|---|
+| **openfootball/worldcup.json** | none | Full 2026 schedule: teams, groups, dates, venues (public domain raw JSON). Manual/community-committed — **no live scores.** | **Seed source** for `teams` + `matches`. Proven live. |
+| **football-data.org** (free tier) | free token (email, no card) | Matches + scores + standings. WC is in the permanently-free tier; scores delayed (not real-time) but final. ~10 req/min. | **Primary results feed.** Verify 2026 fixtures populated when building cron. |
+| **worldcup26.ir** | none | Teams + games with score/`finished`/`time_elapsed` fields; *claims* real-time. | **NOT RECOMMENDED.** Opaque data source (never says how scores are sourced), single hobbyist monetized via crypto wallets, `.ir` hosting → availability + silent-bad-data risk for the feed that decides the pool. Low security risk (server-side GET only), but disqualified when better options exist. |
+| **API-Football** (api-sports/RapidAPI free) | key | All endpoints, but free plan **blocks season 2026**. | **REJECTED.** Spike run 2026-06-02 returned: *"Free plans do not have access to this season, try from 2022 to 2024."* Paid Pro (~€19/mo) would work; not worth it given free alternatives. |
+
+Our needs are modest (48 teams, 104 fixtures, **final** results + knockout progression, polled a few times/day for ~8 users), so delayed-but-reliable beats real-time. This split removes the dependency on API-Football's uncertain free-season access.
+
+**Not on the critical path:** registration + draft + bonus predictions must lock by June 11; results ingestion follows during the group stage.
+
 ### Automated Score Updates
 - A **Vercel Cron Job** runs daily (more frequently on match days) calling a Next.js API route
-- The API route fetches live results from **API-Football** (via RapidAPI — free tier)
+- The API route fetches results from the **primary results feed (football-data.org)**; `matches.external_id` maps the feed's fixture id to internal UUIDs (reconcile on this)
 - Score recalculation runs automatically after results are ingested
 - Admin can manually override incorrect results via the admin panel
 
@@ -293,7 +308,7 @@ create table scores (
 - [x] ~~Knockout re-allocation mechanic~~ — **Option B (blind swap)** chosen; Option A (fresh snake draft) kept as fallback. Blind-swap pairing rules still to refine during play.
 - [ ] Draft time window value for `draft_pick_window_secs` (default 24h)
 - [ ] Notification mechanism for draft turns (email? just check the site?)
-- [ ] Confirm API-Football free tier actually returns WC 2026 fixtures/results (validate before building the cron path)
+- [x] ~~Confirm API-Football free tier actually returns WC 2026 fixtures/results~~ — **RESOLVED 2026-06-02: API-Football free does NOT (season 2026 is paid-only).** Pivoted to openfootball (seed) + football-data.org (results) + admin manual override (backstop) — see Results Data Source section.
 - [x] ~~Data model finalisation~~ — drafted (see Data Model); revisit only after the knockout mechanic is chosen
 - [x] ~~Access mechanism~~ — single shared site password, no invite codes
 - [x] ~~Visibility rules~~ — hidden until each submission phase locks (see Visibility Rules)
