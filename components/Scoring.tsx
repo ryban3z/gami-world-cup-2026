@@ -3,7 +3,7 @@ import { SCORING_ROWS } from "@/lib/content";
 export default function Scoring() {
   return (
     <section className="border-t border-glow px-6 py-6">
-      <h2 className="mb-3 text-[10px] font-bold tracking-[0.15em] text-neon">
+      <h2 className="mb-3 text-[10px] font-bold tracking-[0.15em] text-gold">
         SCORING
       </h2>
       <div className="rounded-xl bg-panel px-4 py-3">
@@ -15,7 +15,7 @@ export default function Scoring() {
             }`}
           >
             <span className="text-bodytext">{row.label}</span>
-            <span className="font-extrabold text-neon">{row.value}</span>
+            <span className="font-extrabold text-gold">{row.value}</span>
           </div>
         ))}
       </div>

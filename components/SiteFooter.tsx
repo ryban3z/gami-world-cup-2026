@@ -5,7 +5,7 @@ export default function SiteFooter() {
       <p className="text-[11px] text-bodytext">
         Shout in the group chat. Tear the rules apart — nothing&apos;s locked yet.
       </p>
-      <p className="mt-3 text-xs font-extrabold text-neon">Drop your feedback 💬</p>
+      <p className="mt-3 text-xs font-extrabold text-gold">Drop your feedback 💬</p>
     </footer>
   );
 }

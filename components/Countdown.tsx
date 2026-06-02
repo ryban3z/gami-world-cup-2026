@@ -21,7 +21,7 @@ export default function Countdown() {
   }, []);
 
   if (c?.isLive) {
-    return <p className="mt-4 text-neon font-extrabold tracking-wide">KICK-OFF! ⚽</p>;
+    return <p className="mt-4 text-gold font-extrabold tracking-wide">KICK-OFF! ⚽</p>;
   }
 
   return (
@@ -30,9 +30,9 @@ export default function Countdown() {
         {UNITS.map(({ key, label }) => (
           <div
             key={key}
-            className="rounded-xl border border-neon/20 bg-panel px-3 py-2 min-w-[3.5rem]"
+            className="rounded-xl border border-gold/20 bg-panel px-3 py-2 min-w-[3.5rem]"
           >
-            <div className="text-2xl font-extrabold text-neon tabular-nums">
+            <div className="text-2xl font-extrabold text-gold tabular-nums">
               {c ? String(c[key]).padStart(2, "0") : "--"}
             </div>
             <div className="text-[7px] tracking-widest text-bodytext/60">{label}</div>

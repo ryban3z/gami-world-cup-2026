@@ -8,7 +8,7 @@ const config: Config = {
         navy: "#0a0e27",
         panel: "#11183a",
         glow: "#1c2a5e",
-        neon: "#00ff9d",
+        gold: "#ffd24a",
         bodytext: "#9fb0d8",
         caption: "#6b7aa3",
         footer: "#070a1d",
