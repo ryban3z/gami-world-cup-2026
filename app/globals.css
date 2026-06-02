@@ -7,3 +7,18 @@ body {
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Form fields: dark-theme readable by default (Tailwind's reset otherwise
+   leaves a white background with inherited white text → invisible input). */
+input,
+textarea,
+select {
+  background-color: #11183a; /* panel */
+  border-color: #1c2a5e; /* glow */
+  color: #ffffff;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6b7aa3; /* caption */
+}
