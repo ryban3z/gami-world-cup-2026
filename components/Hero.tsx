@@ -1,7 +1,10 @@
 import Countdown from "./Countdown";
 import { HOST_NATIONS } from "@/lib/content";
+import { isRegistrationOpen } from "@/lib/landing";
 
-export default function Hero() {
+export default async function Hero() {
+  const registrationOpen = await isRegistrationOpen();
+
   return (
     <section
       className="px-6 pt-12 pb-9 text-center"
@@ -24,6 +27,23 @@ export default function Hero() {
       <p className="mb-1 text-xs font-semibold">winner lifts the Golden Drumstick 🍗</p>
       <p className="mb-5 text-[11px] text-caption">{HOST_NATIONS}</p>
       <Countdown />
+
+      {registrationOpen ? (
+        <a
+          href="/gate"
+          className="mt-6 inline-block rounded-full bg-neon px-8 py-3 text-sm font-bold uppercase tracking-wide text-navy shadow-[0_0_24px_rgba(0,255,157,0.45)] transition hover:brightness-110"
+        >
+          Get started →
+        </a>
+      ) : (
+        <span
+          aria-disabled="true"
+          title="Registration isn't open yet"
+          className="mt-6 inline-block cursor-not-allowed select-none rounded-full border border-glow bg-panel px-8 py-3 text-sm font-bold uppercase tracking-wide text-caption opacity-60"
+        >
+          Registration opens soon
+        </span>
+      )}
     </section>
   );
 }
