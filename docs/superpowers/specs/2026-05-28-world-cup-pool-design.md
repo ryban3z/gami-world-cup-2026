@@ -119,6 +119,10 @@ Our needs are modest (48 teams, 104 fixtures, **final** results + knockout progr
 
 **Stack:** Next.js 14 (App Router) + TypeScript, Supabase (Postgres + Auth), deployed on Vercel.
 
+### Deployment model — multi-group (decided 2026-06-02)
+
+To run the game for a second group of friends, deploy a **separate instance** (own Vercel project + own Supabase project, own URL/password) rather than building multi-tenancy into the schema. The schema stays **single-tenant**; full data isolation comes for free from separate databases. Implication for the build: pool **branding** (pool name, trophy name, etc.) and the **shared site password** must come from **env/config**, never hardcoded, so a fork rebrands without code changes.
+
 ### Three Tiers
 
 | Layer | Technology | Responsibility |
@@ -190,7 +194,7 @@ create table game_config (
   draft_order            uuid[] not null default '{}',   -- profile ids, snake base order
   draft_current_user_id  uuid references profiles(id),
   draft_turn_started_at  timestamptz,           -- for lazy auto-advance on read
-  draft_pick_window_secs int not null default 86400,
+  draft_pick_window_secs int not null default 172800,  -- 48h (group spans time zones; tunable)
   teams_per_player       int not null default 3,
   tournament_kickoff_at  timestamptz default '2026-06-11T00:00:00Z',
   updated_at             timestamptz not null default now()
@@ -306,8 +310,8 @@ create table scores (
 - [x] ~~Exact points breakdown per round~~ — draft values set (see Scoring); seeded into `scoring_rules` + `scoring_config`, tunable before kickoff
 - [x] ~~Bonus prediction categories~~ — draft list of 5 set (see Scoring); seed into `bonus_categories`
 - [x] ~~Knockout re-allocation mechanic~~ — **Option B (blind swap)** chosen; Option A (fresh snake draft) kept as fallback. Blind-swap pairing rules still to refine during play.
-- [ ] Draft time window value for `draft_pick_window_secs` (default 24h)
-- [ ] Notification mechanism for draft turns (email? just check the site?)
+- [x] ~~Draft time window value for `draft_pick_window_secs`~~ — **48h** (172800s), chosen because the group spans time zones; auto-advance cap, not expected pace. Mitigate deadline risk by opening the draft early. Tunable in `game_config`.
+- [x] ~~Notification mechanism for draft turns~~ — **none for v1**: players check the site, admin nudges via group chat. Email/push is post-launch polish.
 - [x] ~~Confirm API-Football free tier actually returns WC 2026 fixtures/results~~ — **RESOLVED 2026-06-02: API-Football free does NOT (season 2026 is paid-only).** Pivoted to openfootball (seed) + football-data.org (results) + admin manual override (backstop) — see Results Data Source section.
 - [x] ~~Data model finalisation~~ — drafted (see Data Model); revisit only after the knockout mechanic is chosen
 - [x] ~~Access mechanism~~ — single shared site password, no invite codes
