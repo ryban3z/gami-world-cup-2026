@@ -70,7 +70,7 @@ All figures trace to the canonical pool design (`2026-05-28-world-cup-pool-desig
 ## Visual Design — "Stadium Night"
 
 - **Mood:** dark, electric, modern-sporty — like a broadcast graphic under floodlights.
-- **Palette:** deep navy background (`#0a0e27`), raised panels (`#11183a`), radial top-glow (`#1c2a5e`), neon-green accent (`#00ff9d`), muted blue-grey body text (`#9fb0d8`), dim captions (`#6b7aa3`).
+- **Palette:** deep navy background (`#0a0e27`), raised panels (`#11183a`), radial top-glow (`#1c2a5e`), gold accent (`#ffd24a`), muted blue-grey body text (`#9fb0d8`), dim captions (`#6b7aa3`).
 - **Type:** system sans (`Segoe UI`/system-ui); heavy uppercase weights for the hero, clear hierarchy with small letter-spaced eyebrow labels.
 - **Components:** countdown shown as bordered chips; scoring inside a raised rounded panel; section dividers as 1px navy rules; pill-style footer button.
 - **Mobile-first:** designed phone-width (~340px content column) and scales up; this is the primary form factor.
