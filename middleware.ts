@@ -20,7 +20,9 @@ export async function middleware(request: NextRequest) {
   // 2) Refresh the Supabase session and gate authed app routes behind login.
   const { response, user } = await updateSession(request);
   const needsAuth =
-    pathname.startsWith("/home") || pathname.startsWith("/draft");
+    pathname.startsWith("/home") ||
+    pathname.startsWith("/draft") ||
+    pathname.startsWith("/predictions");
   if (gated && needsAuth && !user) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
