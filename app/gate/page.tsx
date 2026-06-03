@@ -1,4 +1,7 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { branding } from "@/lib/config";
+import { GATE_COOKIE } from "@/lib/gate";
 import { submitGate } from "./actions";
 import SubmitButton from "@/components/SubmitButton";
 
@@ -7,6 +10,12 @@ export default function GatePage({
 }: {
   searchParams: { error?: string };
 }) {
+  // Already through the gate? Don't re-prompt for the site password — head on
+  // in (middleware sends you to /login if you're not signed in yet).
+  if (cookies().get(GATE_COOKIE)?.value === process.env.GATE_TOKEN) {
+    redirect("/home");
+  }
+
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-6">
       <h1 className="text-2xl font-bold">{branding.poolName}</h1>
