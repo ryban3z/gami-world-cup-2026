@@ -52,7 +52,9 @@ export const SCORING_ROWS: ScoringRow[] = [
 ];
 
 export const TIMELINE: TimelineItem[] = [
-  { label: "Register & draft", when: "now" },
+  { label: "Registration", when: "open now" },
+  { label: "Draft opens", when: "tentative · Fri 5 Jun" },
+  { label: "Picks lock", when: "10 Jun · eve of kickoff" },
   { label: "Group stage", when: "11–27 Jun" },
   { label: "Wildcard + knockout swap", when: "late Jun" },
   { label: "Knockouts → Final", when: "19 Jul" },
