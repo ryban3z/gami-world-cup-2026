@@ -58,6 +58,10 @@ node scripts/generate-teams-seed.mjs   # rewrites supabase/seed/teams.generated.
 
 If openfootball adds a team name the script can't map to a flag, it prints the unmapped names — add them to `scripts/country-iso.json` and re-run.
 
+### Resetting game state (testing)
+
+To rehearse the draft / picks and then start fresh, paste `supabase/dev/reset.sql` into the SQL Editor and Run. It wipes all picks, predictions, scores and ingested matches and resets `game_config` back to the `registration` phase — while keeping registered players, teams, categories, and config. **Run it before the real draft** to clear any test data. ⚠️ Destructive; don't run it mid-tournament.
+
 ## Deploy (Vercel)
 
 Import the repo in Vercel, add every variable from `.env.local.example` as a Project Environment Variable (production values), and deploy. A second group = a separate Vercel project + Supabase project with its own env values.
