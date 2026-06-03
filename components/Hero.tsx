@@ -13,15 +13,16 @@ export default async function Hero() {
           "radial-gradient(120% 80% at 50% -10%, #1c2a5e 0%, #0a0e27 65%)",
       }}
     >
-      <div className="mx-auto max-w-2xl">
-        <div className="text-[10px] font-bold tracking-[0.2em] text-gold md:text-xs">
+      <div className="mx-auto max-w-2xl lg:max-w-5xl">
+        <div className="text-[10px] font-bold tracking-[0.2em] text-gold md:text-xs lg:text-sm">
           FIFA WORLD CUP 2026 · THE FRIENDS POOL
         </div>
-        <h1 className="my-3 text-4xl font-black uppercase leading-[0.98] md:my-5 md:text-6xl">
-          Gami
-          <br />
-          World Cup
-          <br />
+        {/* Stacked on mobile (forced breaks); a single wide line on desktop. */}
+        <h1 className="my-3 text-4xl font-black uppercase leading-[0.98] md:my-5 md:text-6xl lg:my-6 lg:whitespace-nowrap lg:text-7xl">
+          Gami{" "}
+          <br className="lg:hidden" />
+          World Cup{" "}
+          <br className="lg:hidden" />
           <span className="text-gold">&apos;26</span>
         </h1>
         <p className="text-xs text-bodytext md:text-base">8 mates · snake-draft 48 nations</p>
