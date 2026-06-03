@@ -22,11 +22,12 @@ A private, password-protected web app for ~8 friends to run a World Cup 2026 bet
 ### Visibility Rules
 Picks and predictions are hidden from other players while a submission phase is open, then revealed when that phase locks:
 - **During `draft` / `registration`:** a player sees only their own draft picks and bonus predictions.
-- **At `group_locked`:** all group-stage draft picks and bonus predictions become visible to everyone (group stage is now playing — nothing left to hide).
+- **At `group_locked`:** all group-stage draft picks become visible to everyone (the draft is done — nothing left to hide there). Bonus predictions stay hidden — they lock separately at kickoff (see below), which can be later than draft completion.
+- **At the kickoff lock (`predictions_locked_at` set):** everyone's bonus predictions become visible.
 - **During `knockout_realloc`:** re-allocation nominations/swaps are hidden again (blind), so players can't react to each other's moves.
 - **At `knockout_locked`:** knockout ownership becomes visible to everyone.
 
-These are enforced with Supabase Row Level Security: a row is readable by its owner always, and by everyone once `game_config.current_phase` has advanced past the phase that produced it.
+These are enforced with Supabase Row Level Security: a row is readable by its owner always, and by everyone once the gate that produced it has locked — usually `game_config.current_phase` advancing past the producing phase, but bonus predictions reveal on the dedicated `predictions_locked_at` timestamp (decoupled because the prediction window spans the draft and locks at kickoff, independent of the draft phase).
 
 ### Snake Draft
 - Admin opens the draft after everyone has registered
@@ -51,13 +52,30 @@ The draft engine lives in **Postgres `security definer` functions** called via R
 **Testing:** TDD a pure TS snake-order helper (`whose-turn-at-pick-N`); verify the SQL functions by simulating a full draft and asserting every player ends with 3 teams and the auto-reveal fires.
 
 ### Bonus Predictions (submitted upfront, before tournament starts)
-- Each player submits 2 picks per bonus category before the tournament locks
-- Bonus categories (TBD — to be confirmed, examples):
-  - Top scorer (Golden Boot)
-  - Best player (Golden Ball)
-  - Best goalkeeper (Golden Glove)
-  - Others TBD
+- Each player submits up to **2 picks per bonus category** before the tournament locks (the two must differ; partial entries allowed — blanks just score nothing)
+- Bonus categories (the 5 seeded in `bonus_categories`):
+  - Golden Boot — Top Scorer
+  - Golden Ball — Best Player
+  - Golden Glove — Best Goalkeeper
+  - Best Young Player
+  - Tournament Winner
 - **Wildcard:** After the group stage ends, each player may swap one of their bonus picks (one-time use)
+
+#### Implementation design (Plan 3 — decided 2026-06-03)
+
+Scope is **submission + kickoff lock only** — scoring resolution (admin marking correct answers, awarding `bonus_correct_pts`) and the post-group wildcard are later plans. Blind-during / reveal-after is enforced in the database, mirroring the snake draft.
+
+- **Window state on `game_config`:** `predictions_open boolean default false` (submission window) and `predictions_locked_at timestamptz` (set on lock; also the reveal trigger).
+- **Opens with the draft:** `start_draft()` also sets `predictions_open = true`, so opening the draft opens the prediction window (players fill them in while the draft runs). *(Adds one line to the existing function via a new migration that `create or replace`s it.)*
+- **`lock_predictions()`** — *admin only.* Sets `predictions_open = false` and `predictions_locked_at = now()` — the kickoff lock + reveal.
+- **`submit_bonus_pick(category_id, slot, value)`** — *authenticated `security definer`.* Requires `predictions_open = true`; validates `slot in (1,2)` and an active category; upserts the caller's active `bonus_predictions` row (keyed by the existing `uq_active_bonus_pick` unique index). Direct client writes stay denied (deny-by-default), so the open-window rule can't be bypassed.
+- **Visibility (RLS on `bonus_predictions`):** a `select` policy allowing rows where `user_id = auth.uid()` **OR** `game_config.predictions_locked_at is not null` — own picks always; everyone's once locked. `bonus_categories` is already readable; the page reads picks directly under RLS (no read RPC needed — unlike the draft, nothing is hidden beyond ownership).
+
+**Input format:** *Tournament Winner* uses a **team dropdown** (from the 48 seeded `teams`); the other four are **free text** (no player roster is seeded — the admin judges matches at scoring time).
+
+**UI — `/predictions`** (gated, mobile-first, gold theme): one card per category with its 2 inputs and a single **Save** action; a status line ("Predictions open — locked at kickoff" / "Locked — everyone's picks below"); **admin-only "Lock predictions (kickoff)"** button on the same page. After lock, a read-only reveal of all players' picks grouped by category. The home page links to `/predictions` once the window is open; `/predictions` is gated behind auth in middleware (like `/draft`).
+
+**Testing:** TDD a small pure TS validation helper (non-empty + two-distinct-picks); a SQL simulation asserting writes are blocked when the window is closed and that reveal flips on `lock_predictions()`.
 
 ### Multi-Phase Picks
 1. **Pre-tournament:** Snake draft + bonus predictions submitted, then locked at tournament kickoff (June 11, 2026)
