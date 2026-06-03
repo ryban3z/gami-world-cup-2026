@@ -1,10 +1,13 @@
 import Countdown from "./Countdown";
 import GetStarted from "./GetStarted";
 import { HOST_NATIONS } from "@/lib/content";
-import { isRegistrationOpen } from "@/lib/landing";
+import { isRegistrationOpen, getRegisteredCount } from "@/lib/landing";
 
 export default async function Hero() {
-  const registrationOpen = await isRegistrationOpen();
+  const [registrationOpen, registeredCount] = await Promise.all([
+    isRegistrationOpen(),
+    getRegisteredCount(),
+  ]);
 
   return (
     <section
@@ -30,6 +33,12 @@ export default async function Hero() {
         <p className="mb-1 text-xs font-semibold md:text-base">winner lifts the Golden Drumstick 🍗</p>
         <p className="mb-5 text-[11px] text-caption md:mb-7 md:text-sm">{HOST_NATIONS}</p>
         <Countdown />
+
+        {registeredCount > 0 && (
+          <p className="mt-5 text-sm font-bold text-gold md:mt-6 md:text-base">
+            🔥 {registeredCount} {registeredCount === 1 ? "manager" : "managers"} already in the pool
+          </p>
+        )}
 
         <GetStarted registrationOpen={registrationOpen} />
       </div>

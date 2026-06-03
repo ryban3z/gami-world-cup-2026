@@ -17,3 +17,21 @@ export async function isRegistrationOpen(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Number of registered players, for landing-page hype copy.
+ * Anonymous client + security-definer RPC (exposes only the count).
+ * Fails closed (returns 0) if Supabase is unreachable or the RPC is missing.
+ */
+export async function getRegisteredCount(): Promise<number> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return 0;
+  try {
+    const supabase = createClient(url, key);
+    const { data, error } = await supabase.rpc("registered_count");
+    return !error && typeof data === "number" ? data : 0;
+  } catch {
+    return 0;
+  }
+}
