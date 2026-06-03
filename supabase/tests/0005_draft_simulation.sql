@@ -51,7 +51,11 @@ begin
   perform set_config('request.jwt.claim.sub', v_ids[1]::text, true);
   perform public.start_draft();
 
-  select teams_per_player into v_tpp from game_config where id = 1;
+  -- start_draft() snapshots ALL profiles, not just our sims — so read the real
+  -- player count back from the config and drive the loop off that. (Otherwise,
+  -- if the DB has other registered profiles, the loop would stop mid-draft.)
+  select array_length(draft_order, 1), teams_per_player into v_n, v_tpp
+    from game_config where id = 1;
   v_total := v_n * v_tpp;
 
   -- Run every pick: impersonate the current picker, pick first available team.
