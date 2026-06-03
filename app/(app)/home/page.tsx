@@ -16,11 +16,16 @@ export default async function HomePage() {
       .from("profiles")
       .select("id, display_name")
       .order("created_at", { ascending: true }),
-    supabase.from("game_config").select("current_phase").eq("id", 1).single(),
+    supabase
+      .from("game_config")
+      .select("current_phase, predictions_open, predictions_locked_at")
+      .eq("id", 1)
+      .single(),
   ]);
 
   const list = players ?? [];
   const draftOpen = (cfg?.current_phase ?? "registration") !== "registration";
+  const predictionsStarted = (cfg?.predictions_open ?? false) || cfg?.predictions_locked_at != null;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6">
@@ -38,6 +43,15 @@ export default async function HomePage() {
           className="inline-block rounded-full bg-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-navy transition hover:brightness-110"
         >
           Go to the draft →
+        </a>
+      )}
+
+      {predictionsStarted && (
+        <a
+          href="/predictions"
+          className="inline-block rounded-full border border-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-gold transition hover:bg-gold hover:text-navy"
+        >
+          Bonus predictions →
         </a>
       )}
 
