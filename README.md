@@ -32,6 +32,12 @@ The landing page runs with no backend. The core app (gate + auth + data) needs a
    2. `supabase/migrations/0002_rls_policies.sql`
    3. `supabase/seed/0003_seed_config_categories.sql`
    4. `supabase/seed/teams.generated.sql`
+   5. `supabase/migrations/0004_registration_open.sql` — landing-page "join" CTA flag.
+   6. `supabase/migrations/0005_draft.sql` — the snake-draft engine (security-definer functions).
+
+   After applying `0005`, verify the engine end-to-end: paste
+   `supabase/tests/0005_draft_simulation.sql` into the SQL Editor and Run —
+   expect a `DRAFT SIMULATION PASSED` notice (it rolls itself back, leaving no data).
 4. **Disable email confirmation:** Supabase → Authentication → Sign In / Providers → Email → turn **off "Confirm email"** (so friends can register and log in immediately without an SMTP setup).
 5. **Make yourself admin** (after registering): in the SQL Editor, run
    `update profiles set is_admin = true where display_name = '<your name>';`
