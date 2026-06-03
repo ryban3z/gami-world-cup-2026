@@ -28,7 +28,7 @@ export default async function HomePage() {
   const predictionsStarted = (cfg?.predictions_open ?? false) || cfg?.predictions_locked_at != null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6 lg:max-w-2xl">
       <div>
         <h1 className="text-2xl font-bold">{branding.poolName}</h1>
         <p className="mt-2 text-bodytext">
@@ -59,7 +59,7 @@ export default async function HomePage() {
         <h2 className="text-sm font-bold uppercase tracking-wide text-gold">
           Players registered ({list.length})
         </h2>
-        <ul className="mt-3 flex flex-col gap-2">
+        <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {list.map((p) => (
             <li key={p.id} className="flex items-center gap-2 text-sm">
               <span className="text-gold">●</span>

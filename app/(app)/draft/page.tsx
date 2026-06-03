@@ -32,7 +32,7 @@ export default async function DraftPage({
   const revealed = state.phase !== "registration" && state.phase !== "draft";
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-28">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-28 lg:max-w-4xl">
       <header>
         <h1 className="text-2xl font-bold">The Draft</h1>
       </header>

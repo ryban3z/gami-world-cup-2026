@@ -2,8 +2,8 @@ import { STEPS } from "@/lib/content";
 
 export default function HowItWorks() {
   return (
-    <section className="border-t border-glow px-6 py-6">
-      <h2 className="mb-3 text-[10px] font-bold tracking-[0.15em] text-gold">
+    <section className="border-t border-glow px-6 py-6 lg:h-full lg:rounded-xl lg:border lg:bg-panel/20">
+      <h2 className="mb-3 text-[10px] font-bold tracking-[0.15em] text-gold lg:text-xs">
         HOW IT WORKS
       </h2>
       <ol className="space-y-3">

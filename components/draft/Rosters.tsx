@@ -10,7 +10,7 @@ export default function Rosters({
 }) {
   const byId = new Map(board.map((t) => [t.id, t]));
   return (
-    <div className="flex flex-col gap-3">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {rosters.map((r) => (
         <div key={r.user_id} className="rounded-xl border border-glow bg-panel p-4">
           <h3 className="text-sm font-bold uppercase tracking-wide text-gold">

@@ -47,7 +47,7 @@ export default async function PredictionsPage({
   for (const pr of profiles ?? []) nameById[pr.id] = pr.display_name;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-20">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-20 lg:max-w-3xl">
       <header>
         <h1 className="text-2xl font-bold">Bonus Predictions</h1>
         <p className="mt-1 text-sm text-bodytext">

@@ -27,7 +27,8 @@ export default function PredictionForm({
   return (
     <div className="flex flex-col gap-5">
       <form action={savePredictions} className="flex flex-col gap-4">
-        {categories.map((c) => {
+        <div className="grid gap-4 sm:grid-cols-2">
+          {categories.map((c) => {
           const isWinner = c.key === "tournament_winner";
           return (
             <div key={c.id} className="rounded-xl border border-glow bg-panel p-4">
@@ -59,6 +60,7 @@ export default function PredictionForm({
             </div>
           );
         })}
+        </div>
         <button className="rounded-full bg-gold px-6 py-3 font-bold text-navy transition hover:brightness-110">
           Save predictions
         </button>

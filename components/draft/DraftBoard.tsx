@@ -45,7 +45,7 @@ export default function DraftBoard({
           <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-caption">
             Group {letter}
           </h3>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {teams.map((t) => {
               const isMine = mine.has(t.id);
               const tappable = isMyTurn && !t.taken && !pending;
