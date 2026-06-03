@@ -1,4 +1,5 @@
 import { savePredictions, lockPredictions } from "@/app/(app)/predictions/actions";
+import SubmitButton from "@/components/SubmitButton";
 
 interface Category {
   id: string;
@@ -61,17 +62,23 @@ export default function PredictionForm({
           );
         })}
         </div>
-        <button className="rounded-full bg-gold px-6 py-3 font-bold text-navy transition hover:brightness-110">
+        <SubmitButton
+          pendingLabel="Saving…"
+          className="rounded-full bg-gold px-6 py-3 font-bold text-navy transition hover:brightness-110"
+        >
           Save predictions
-        </button>
+        </SubmitButton>
       </form>
 
       {isAdmin && (
         <form action={lockPredictions} className="rounded-xl border border-gold/40 bg-panel p-4">
           <h2 className="text-xs font-bold uppercase tracking-wide text-gold">Admin</h2>
-          <button className="mt-3 rounded-full border border-gold px-5 py-2 text-sm font-bold text-gold transition hover:bg-gold hover:text-navy">
+          <SubmitButton
+            pendingLabel="Locking…"
+            className="mt-3 rounded-full border border-gold px-5 py-2 text-sm font-bold text-gold transition hover:bg-gold hover:text-navy"
+          >
             Lock predictions (kickoff)
-          </button>
+          </SubmitButton>
           <p className="mt-2 text-xs text-caption">
             Closes the window and reveals everyone&apos;s picks. Can&apos;t be undone.
           </p>

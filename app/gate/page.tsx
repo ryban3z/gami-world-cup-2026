@@ -1,5 +1,6 @@
 import { branding } from "@/lib/config";
 import { submitGate } from "./actions";
+import SubmitButton from "@/components/SubmitButton";
 
 export default function GatePage({
   searchParams,
@@ -29,7 +30,7 @@ export default function GatePage({
         {searchParams.error && (
           <p className="text-sm text-red-500">Wrong password — try again.</p>
         )}
-        <button className="rounded bg-gold p-3 font-bold text-navy transition hover:brightness-110">Enter</button>
+        <SubmitButton pendingLabel="Checking…" className="rounded bg-gold p-3 font-bold text-navy transition hover:brightness-110">Enter</SubmitButton>
       </form>
     </main>
   );

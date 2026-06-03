@@ -2,48 +2,67 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { branding } from "@/lib/config";
 import { signOut } from "../../(auth)/actions";
+import { makePick } from "../draft/actions";
+import DraftStatus, { type DraftState } from "@/components/draft/DraftStatus";
+import DraftBoard from "@/components/draft/DraftBoard";
+import Rosters from "@/components/draft/Rosters";
+import AdminControls from "@/components/draft/AdminControls";
 
-export default async function HomePage() {
+export const dynamic = "force-dynamic"; // always reflect live game state
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: { error?: string };
+}) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: me }, { data: players }, { data: cfg }] = await Promise.all([
-    supabase.from("profiles").select("display_name").eq("id", user.id).single(),
-    supabase
-      .from("profiles")
-      .select("id, display_name")
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("game_config")
-      .select("current_phase, predictions_open, predictions_locked_at")
-      .eq("id", 1)
-      .single(),
-  ]);
+  const [{ data: me }, { data: players }, { data: cfg }, { data: draft }] =
+    await Promise.all([
+      supabase.from("profiles").select("display_name").eq("id", user.id).single(),
+      supabase
+        .from("profiles")
+        .select("id, display_name")
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("game_config")
+        .select("predictions_open, predictions_locked_at")
+        .eq("id", 1)
+        .single(),
+      supabase.rpc("draft_state"),
+    ]);
 
+  const state = (draft as DraftState | null) ?? null;
+  const phase = state?.phase ?? "registration";
+  const inRegistration = phase === "registration";
+  const revealed = phase !== "registration" && phase !== "draft";
+  const predictionsStarted =
+    (cfg?.predictions_open ?? false) || cfg?.predictions_locked_at != null;
   const list = players ?? [];
-  const draftOpen = (cfg?.current_phase ?? "registration") !== "registration";
-  const predictionsStarted = (cfg?.predictions_open ?? false) || cfg?.predictions_locked_at != null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6 lg:max-w-2xl">
-      <div>
+    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-28 lg:max-w-4xl">
+      <header>
         <h1 className="text-2xl font-bold">{branding.poolName}</h1>
-        <p className="mt-2 text-bodytext">
+        <p className="mt-1 text-bodytext">
           Welcome, <strong className="text-white">{me?.display_name ?? "player"}</strong>.
-          {draftOpen ? " The draft is underway — head in and pick." : " The draft hasn't opened yet — sit tight."}
         </p>
-      </div>
+      </header>
 
-      {draftOpen && (
-        <a
-          href="/draft"
-          className="inline-block rounded-full bg-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-navy transition hover:brightness-110"
-        >
-          Go to the draft →
-        </a>
+      {searchParams.error && (
+        <p className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
+          {searchParams.error}
+        </p>
+      )}
+
+      {state && <DraftStatus state={state} />}
+
+      {state?.is_admin && (
+        <AdminControls phase={phase} currentUserName={state?.current_user_name ?? null} />
       )}
 
       {predictionsStarted && (
@@ -55,20 +74,40 @@ export default async function HomePage() {
         </a>
       )}
 
-      <section className="rounded-xl border border-glow bg-panel p-4">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-gold">
-          Players registered ({list.length})
-        </h2>
-        <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {list.map((p) => (
-            <li key={p.id} className="flex items-center gap-2 text-sm">
-              <span className="text-gold">●</span>
-              <span className="text-white">{p.display_name}</span>
-              {p.id === user.id && <span className="text-caption">(you)</span>}
-            </li>
-          ))}
-        </ul>
-      </section>
+      {state && (phase === "draft" || revealed) && (
+        <DraftBoard
+          board={state.board}
+          isMyTurn={state.is_my_turn}
+          myTeamIds={state.my_team_ids}
+          revealed={revealed}
+          makePick={makePick}
+        />
+      )}
+
+      {revealed && state?.rosters && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-caption">Rosters</h2>
+          <Rosters rosters={state.rosters} board={state.board} />
+        </section>
+      )}
+
+      {/* Who's in — most useful before the draft kicks off. */}
+      {inRegistration && (
+        <section className="rounded-xl border border-glow bg-panel p-4">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-gold">
+            Players registered ({list.length})
+          </h2>
+          <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {list.map((p) => (
+              <li key={p.id} className="flex items-center gap-2 text-sm">
+                <span className="text-gold">●</span>
+                <span className="text-white">{p.display_name}</span>
+                {p.id === user.id && <span className="text-caption">(you)</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <form action={signOut}>
         <button className="text-sm text-caption underline">Sign out</button>
