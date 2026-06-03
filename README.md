@@ -38,6 +38,11 @@ The landing page runs with no backend. The core app (gate + auth + data) needs a
    After applying `0005`, verify the engine end-to-end: paste
    `supabase/tests/0005_draft_simulation.sql` into the SQL Editor and Run —
    expect a `DRAFT SIMULATION PASSED` notice (it rolls itself back, leaving no data).
+   7. `supabase/migrations/0006_predictions.sql` — bonus-prediction window + save/lock RPCs.
+
+   After applying `0006`, verify it: paste `supabase/tests/0006_predictions_simulation.sql`
+   into the SQL Editor and Run — expect a `PREDICTIONS SIMULATION PASSED` notice (it rolls
+   itself back, leaving no data).
 4. **Disable email confirmation:** Supabase → Authentication → Sign In / Providers → Email → turn **off "Confirm email"** (so friends can register and log in immediately without an SMTP setup).
 5. **Make yourself admin** (after registering): in the SQL Editor, run
    `update profiles set is_admin = true where display_name = '<your name>';`
