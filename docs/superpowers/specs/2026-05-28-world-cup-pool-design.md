@@ -31,9 +31,24 @@ These are enforced with Supabase Row Level Security: a row is readable by its ow
 ### Snake Draft
 - Admin opens the draft after everyone has registered
 - Each player picks 3 teams in snake order (async — players have a time window per turn)
-- Draft is async: a player is notified (or checks the site) when it's their turn; if they don't pick within the window the turn auto-advances
+- Draft is async: a player checks the site when it's their turn (no notifications in v1)
 - Each team can only be drafted by one player
 - 48 teams in WC 2026
+
+#### Implementation design (Plan 2 — decided 2026-06-03)
+
+The draft engine lives in **Postgres `security definer` functions** called via RPC from Next.js server actions, so every rule (one owner per team, exactly 3 per player, turn order, the reveal) holds atomically and can't be raced or bypassed from the client:
+
+- **`start_draft()`** — *admin only.* Snapshots the registered players (`profiles`), randomises them into `game_config.draft_order`, sets `current_phase = 'draft'`, points `draft_current_user_id` at the first picker, sets `draft_turn_started_at = now()`, and closes registration (`registration_open = false`).
+- **`make_pick(team_id)`** — *current-turn player only* (`auth.uid() = draft_current_user_id`). Validates the team is still available (no `team_ownership` row for it at `phase='group'`), inserts the pick (`team_ownership`, `phase='group'`, with `pick_order`/`snake_round`), then advances `draft_current_user_id` to the next player in **snake order** (round 1: `draft_order` forward; round 2: reverse; round 3: forward). When the final pick lands (players × `teams_per_player`), it sets `current_phase = 'group_locked'` — the **auto-reveal**.
+- **`admin_autopick()`** — *admin only.* Assigns a **random available** team to whoever's turn it currently is (same advance/reveal logic). Used to unstick a stalled turn **after the admin has nudged** the player — there is **no automatic timeout expiry**; `draft_pick_window_secs` (48h) is only an advisory the admin uses to decide when to nudge/auto-pick.
+- **`draft_state()`** — *authenticated read.* Returns phase, whose turn it is (id + display name), pick progress (e.g. 7 of 24), and the **board**: all 48 teams with a `taken` boolean but **no owner revealed** while `current_phase = 'draft'`; plus the caller's own picks (always visible to them). Once `current_phase = 'group_locked'`, it returns **full rosters** (everyone's picks). `team_ownership` itself stays unreadable directly during the draft — this RPC is the only window, so blind-during / reveal-after is enforced in the database, not just the UI.
+
+**Visibility rule:** during the draft you see only your own picks plus which teams are **taken** (board shows them greyed/disabled, owner hidden); at `group_locked` all rosters are revealed to everyone.
+
+**UI — `/draft`** (gated, mobile-first, gold theme): status line ("It's YOUR turn — pick a team" / "Waiting on {name}…" + progress); a board of the 48 teams grouped A–L with flags (taken = greyed "taken", available = tappable only on your turn → confirm → `make_pick`); your roster; and **admin-only controls on the same page** — "Start draft" (during registration) and "Auto-pick for current player" (during the draft). After `group_locked`, the board shows everyone's rosters.
+
+**Testing:** TDD a pure TS snake-order helper (`whose-turn-at-pick-N`); verify the SQL functions by simulating a full draft and asserting every player ends with 3 teams and the auto-reveal fires.
 
 ### Bonus Predictions (submitted upfront, before tournament starts)
 - Each player submits 2 picks per bonus category before the tournament locks
