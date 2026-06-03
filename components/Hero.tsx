@@ -29,7 +29,7 @@ export default async function Hero() {
           <br className="lg:hidden" />
           <span className="text-gold">&apos;26</span>
         </h1>
-        <p className="text-xs text-bodytext md:text-base">8 mates · snake-draft 48 nations</p>
+        <p className="text-xs text-bodytext md:text-base">You &amp; your mates · snake-draft 48 nations</p>
         <p className="mb-1 text-xs font-semibold md:text-base">winner lifts the Golden Drumstick 🍗</p>
         <p className="mb-5 text-[11px] text-caption md:mb-7 md:text-sm">{HOST_NATIONS}</p>
         <Countdown />
