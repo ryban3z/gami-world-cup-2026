@@ -24,18 +24,18 @@ declare
   v_maxpick int;
   v_distinct int;
 begin
-  -- Make admin checks pass for whoever we impersonate: create players directly
-  -- in profiles (bypassing auth.users is fine inside this rolled-back tx because
-  -- we only call the draft functions, which read profiles/game_config).
-  -- NOTE: profiles.id references auth.users(id); to satisfy the FK we insert
-  -- matching auth.users rows too, then clean up via ROLLBACK.
+  -- Create players the same way real signups do: insert into auth.users with
+  -- display_name in raw_user_meta_data, which fires the on_auth_user_created
+  -- trigger -> handle_new_user(), auto-creating the profiles row. We then flip
+  -- is_admin so start_draft passes. (Do NOT insert into profiles directly — the
+  -- trigger already did, and a second insert would violate the primary key.)
   for v_i in 1..v_n loop
     v_id := gen_random_uuid();
-    insert into auth.users (id, instance_id, aud, role, email)
+    insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data)
       values (v_id, '00000000-0000-0000-0000-000000000000', 'authenticated',
-              'authenticated', 'sim-' || v_i || '@sim.local');
-    insert into profiles (id, display_name, is_admin)
-      values (v_id, 'Sim Player ' || v_i, true);   -- admin so start_draft passes
+              'authenticated', 'sim-' || v_i || '@sim.local',
+              jsonb_build_object('display_name', 'Sim Player ' || v_i));
+    update profiles set is_admin = true where id = v_id;  -- so start_draft passes
     v_ids := v_ids || v_id;
   end loop;
 
