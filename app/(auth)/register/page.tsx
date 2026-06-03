@@ -16,7 +16,7 @@ export default function RegisterPage({
         <input name="display_name" required placeholder="Display name" className="rounded border p-3" />
         <input name="password" type="password" required placeholder="Password" className="rounded border p-3" />
         {searchParams.error && <p className="text-sm text-red-500">{searchParams.error}</p>}
-        <button className="rounded bg-black p-3 text-white">Register</button>
+        <button className="rounded bg-gold p-3 font-bold text-navy transition hover:brightness-110">Register</button>
       </form>
       <a href="/login" className="text-sm underline">Already have an account? Log in</a>
     </main>

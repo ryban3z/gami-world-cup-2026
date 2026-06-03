@@ -12,7 +12,7 @@ export default function LoginPage({
         <input name="display_name" required placeholder="Display name" className="rounded border p-3" />
         <input name="password" type="password" required placeholder="Password" className="rounded border p-3" />
         {searchParams.error && <p className="text-sm text-red-500">{searchParams.error}</p>}
-        <button className="rounded bg-black p-3 text-white">Log in</button>
+        <button className="rounded bg-gold p-3 font-bold text-navy transition hover:brightness-110">Log in</button>
       </form>
       <a href="/register" className="text-sm underline">Need an account? Register</a>
     </main>
