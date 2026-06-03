@@ -37,7 +37,7 @@ These are the non-obvious invariants the whole app is built around. Preserve the
 
 - **`team_ownership` carries a `phase` (`group` / `knockout`).** The same table holds both the group-stage draft and the knockout re-allocation (a second row per team). This is what keeps group-stage scoring stable when teams are re-shuffled for the knockouts.
 
-- **Scoring is split by ownership phase.** Qualifying out of the group rewards the `phase='group'` owner; the knockout run rewards the `phase='knockout'` owner. This split is what makes the blind-swap mechanic fair — respect it in any scoring code.
+- **Scoring is split by ownership phase.** Qualifying out of the group rewards the `phase='group'` owner; the knockout run rewards the `phase='knockout'` owner. This split is what keeps the post-group team swap fair — respect it in any scoring code.
 
 - **`scores` and `team_standings` are derived data.** They must be fully rebuildable from `team_ownership` + `matches` + `bonus_predictions`. Recalculation **recomputes from scratch (idempotent); never increment.**
 
@@ -47,7 +47,7 @@ These are the non-obvious invariants the whole app is built around. Preserve the
 
 ## Knockout re-allocation
 
-Chosen mechanic is **Option B (blind swap)** — players nominate one owned team to swap, matched blind. **Option A (fresh snake re-draft)** is the documented fallback and needs no schema change. The blind-swap pairing rules are intentionally still loose and meant to be refined during play.
+Chosen mechanic is **free-agent pickup** (decided 2026-06-03): after the group stage each manager may make **one optional team swap** — drop one owned team and claim one unowned team that advanced to the Round of 32. No manager-to-manager trading. Scoring follows the ownership-phase split (the pickup earns knockout points only; group-qualify points stay with the group-phase owner). **Option A (fresh snake re-draft)** remains the documented fallback and needs no schema change. The **allocation order under contention is intentionally left open** (reverse-standings priority or a mini-game), to settle during play. (This supersedes the earlier Option B blind-swap mechanic.)
 
 ## Conventions
 

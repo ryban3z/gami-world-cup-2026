@@ -62,16 +62,27 @@ The draft engine lives in **Postgres `security definer` functions** called via R
 ### Multi-Phase Picks
 1. **Pre-tournament:** Snake draft + bonus predictions submitted, then locked at tournament kickoff (June 11, 2026)
 2. **Group stage:** Teams play, scores accumulate
-3. **Post-group stage (`knockout_realloc`):** Wildcard window opens; knockout team re-allocation opens (mechanic still being explored — see below)
+3. **Post-group stage (`knockout_realloc`):** Wildcard window opens (swap one bonus pick); knockout team re-allocation opens — each manager may make one optional free-agent team swap (see below)
 4. **Knockout rounds (`knockout_locked`):** Ongoing scoring as teams advance
 
 ### Knockout Re-allocation
-With 8 players × 3 teams, 24 of the 48 teams are drafted; once the group stage ends (16 of 48 teams eliminated), roughly a third of the drafted teams drop out, so ownership is re-shuffled for the knockouts. Both candidate mechanics are supported by the same `team_ownership` table (a second row per team with `phase = 'knockout'`).
+With 8 players × 3 teams, 24 of the 48 teams are drafted; once the group stage ends (16 of 48 teams eliminated), roughly a third of the drafted teams drop out, so ownership can be refreshed for the knockouts. Modeled with the same `team_ownership` table (a second row per team at `phase = 'knockout'`).
 
-- **Chosen — Option B (blind swap):** each player nominates one team they own to put up for swap; nominations are matched blind (neither side sees the other's pick until the window locks). Exact matching/pairing rules to be refined during play (`swap_nominations` table holds the state).
-- **Fallback — Option A (fresh snake draft):** all surviving teams go back into a pool and are re-drafted in snake order. Kept as a pivot option if blind-swap matching proves clunky in practice; requires no schema change.
+**Chosen — free-agent pickup (decided 2026-06-03):** each manager may make **one optional team swap** — drop one team they own and claim **one unowned team that advanced to the Round of 32**. No trading between managers (a manager who's happy keeps all three teams into the knockouts; doing nothing is valid).
 
-Group-stage scoring is unaffected either way — it is always attributed to whoever owned the team during `phase = 'group'`.
+- **Allocation order under contention — TBD:** when two+ managers want the same free agent, the tie-break is deliberately left open. Leading candidates: reverse-standings priority (worst-placed manager picks first, NBA-lottery style) or a one-off mini-game. To be settled during play.
+- **Scoring follows the ownership-phase split (unchanged):** the picked-up team earns its **knockout-ladder points** for the new `phase = 'knockout'` owner; the **+5 group-qualify reward stays with the group-phase owner** (or no one, if the team was undrafted). Group-stage scoring is never disturbed — it is always attributed to whoever owned the team during `phase = 'group'`.
+
+**Fallback — Option A (fresh snake re-draft):** all surviving teams go back into a pool and are re-drafted in snake order. Kept as a pivot option; requires no schema change.
+
+*(Superseded: the earlier **Option B blind swap** — managers trading nominated teams matched blind — is dropped in favour of the free-agent pickup. The `swap_nominations` table can be repurposed for drop/claim state or removed when this is built.)*
+
+### In-tournament Bonus Games (future — not yet designed)
+Admin-created, **time-limited** mini side-bets launched *during* the tournament for fun and variety — separate from the upfront bonus predictions. Light, optional, and recurring (e.g. a question tied to a given match day).
+
+**Recommended v1 shape (when built):** the admin posts a question + a set of multiple-choice options + a deadline + a point value; players tap one option; picks stay **blind until the deadline** (consistent with the app's visibility model), then the admin marks the winning option and scoring is **automatic and idempotent** (derived/rebuildable, like all `scores`). A free-text / admin-graded variant is a possible later extension.
+
+Exact games, format, and point values are **TBD** — captured here as a direction, not a committed design. Likely its own future plan, after the pre-tournament critical path and group-stage scoring are in.
 
 ### Scoring
 - Points-based (not winner-takes-all). All values below are a **draft starting point** — tunable via the scoring config tables before kickoff.
@@ -228,7 +239,9 @@ create table team_ownership (
   unique (team_id, phase)                        -- one owner per team per phase
 );
 
--- ============ KNOCKOUT SWAP NOMINATIONS (Option B — experimental) ============
+-- ============ KNOCKOUT SWAP NOMINATIONS (legacy — Option B blind swap, now superseded) ============
+-- Superseded by the free-agent pickup mechanic (see Knockout Re-allocation).
+-- Currently unused; repurpose for drop/claim state or drop when that's built.
 create table swap_nominations (
   id           uuid primary key default gen_random_uuid(),
   user_id      uuid not null references profiles(id),
@@ -324,7 +337,8 @@ create table scores (
 
 - [x] ~~Exact points breakdown per round~~ — draft values set (see Scoring); seeded into `scoring_rules` + `scoring_config`, tunable before kickoff
 - [x] ~~Bonus prediction categories~~ — draft list of 5 set (see Scoring); seed into `bonus_categories`
-- [x] ~~Knockout re-allocation mechanic~~ — **Option B (blind swap)** chosen; Option A (fresh snake draft) kept as fallback. Blind-swap pairing rules still to refine during play.
+- [x] ~~Knockout re-allocation mechanic~~ — **Free-agent pickup** chosen (2026-06-03): one optional swap — drop one team + claim one unowned R32 team. Supersedes the earlier Option B blind swap; Option A (fresh snake draft) kept as fallback. **Allocation order under contention still TBD** (reverse-standings priority or a mini-game).
+- [ ] In-tournament bonus games — exact games, answer format (recommended: multiple-choice, blind-until-deadline, auto-scored), and point values TBD. See *In-tournament Bonus Games*.
 - [x] ~~Draft time window value for `draft_pick_window_secs`~~ — **48h** (172800s), chosen because the group spans time zones; auto-advance cap, not expected pace. Mitigate deadline risk by opening the draft early. Tunable in `game_config`.
 - [x] ~~Notification mechanism for draft turns~~ — **none for v1**: players check the site, admin nudges via group chat. Email/push is post-launch polish.
 - [x] ~~Confirm API-Football free tier actually returns WC 2026 fixtures/results~~ — **RESOLVED 2026-06-02: API-Football free does NOT (season 2026 is paid-only).** Pivoted to openfootball (seed) + football-data.org (results) + admin manual override (backstop) — see Results Data Source section.

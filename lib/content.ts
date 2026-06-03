@@ -35,7 +35,12 @@ export const STEPS: Step[] = [
   {
     n: 4,
     title: "Knockout re-shuffle",
-    body: "Blind-swap teams before the knockouts — keep your runners, ditch the dead weight.",
+    body: "Drop a team that's out and grab a free agent still alive in the Round of 32 — one swap before the knockouts.",
+  },
+  {
+    n: 5,
+    title: "Surprise bonus games",
+    body: "Quick, time-limited side-bets pop up during the tournament — call the random and the ridiculous for extra points.",
   },
 ];
 
