@@ -1,4 +1,5 @@
 import Countdown from "./Countdown";
+import GetStarted from "./GetStarted";
 import { HOST_NATIONS } from "@/lib/content";
 import { isRegistrationOpen } from "@/lib/landing";
 
@@ -30,22 +31,7 @@ export default async function Hero() {
         <p className="mb-5 text-[11px] text-caption md:mb-7 md:text-sm">{HOST_NATIONS}</p>
         <Countdown />
 
-        {registrationOpen ? (
-          <a
-            href="/gate"
-            className="mt-6 inline-block rounded-full bg-gold px-8 py-3 text-sm font-bold uppercase tracking-wide text-navy shadow-[0_0_24px_rgba(255,210,74,0.45)] transition hover:brightness-110 md:mt-8 md:px-10 md:py-4 md:text-base"
-          >
-            Get started →
-          </a>
-        ) : (
-          <span
-            aria-disabled="true"
-            title="Registration isn't open yet"
-            className="mt-6 inline-block cursor-not-allowed select-none rounded-full border border-glow bg-panel px-8 py-3 text-sm font-bold uppercase tracking-wide text-caption opacity-60 md:mt-8 md:px-10 md:py-4 md:text-base"
-          >
-            Registration opens soon
-          </span>
-        )}
+        <GetStarted registrationOpen={registrationOpen} />
       </div>
     </section>
   );
