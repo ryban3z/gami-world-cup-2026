@@ -10,11 +10,14 @@ export const revalidate = 30;
 
 export default function Home() {
   return (
-    <main className="mx-auto min-h-screen max-w-md bg-navy">
+    <main className="min-h-screen bg-navy">
       <Hero />
-      <HowItWorks />
-      <Scoring />
-      <Timeline />
+      {/* Full-bleed hero above; info sections centered in a readable column. */}
+      <div className="mx-auto max-w-2xl">
+        <HowItWorks />
+        <Scoring />
+        <Timeline />
+      </div>
       <SiteFooter />
     </main>
   );
