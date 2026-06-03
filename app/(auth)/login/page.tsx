@@ -1,11 +1,20 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 import { login } from "../actions";
 import SubmitButton from "@/components/SubmitButton";
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
   searchParams: { error?: string };
 }) {
+  // Already signed in? Go straight to the dashboard.
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) redirect("/home");
+
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-6">
       <h1 className="text-2xl font-bold">Log in</h1>
