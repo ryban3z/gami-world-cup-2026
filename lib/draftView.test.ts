@@ -1,7 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ordinal, turnContext } from "@/lib/draftView";
-import { snakeRailForRound } from "@/lib/draftView";
-import { myPickSlots } from "@/lib/draftView";
+import { ordinal, turnContext, snakeRailForRound, myPickSlots } from "@/lib/draftView";
 
 describe("ordinal", () => {
   it("handles 1st, 2nd, 3rd, 4th", () => {

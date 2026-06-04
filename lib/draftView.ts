@@ -59,7 +59,7 @@ export function snakeRailForRound(orderNames: string[], picksMade: number, playe
     let status: RailStatus;
     if (seat < positionInRound) status = "done";
     else if (seat === positionInRound) status = "now";
-    else if (seat === positionInRound + 1) status = "next";
+    else if (seat === positionInRound + 1 && positionInRound + 1 < playerCount) status = "next";
     else status = "upcoming";
     entries.push({ name: orderNames[playerIdx], status });
   }
