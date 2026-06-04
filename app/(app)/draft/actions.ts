@@ -8,25 +8,9 @@ function backWithError(message: string): never {
   redirect(`/home?error=${encodeURIComponent(message)}`);
 }
 
-export async function startDraft() {
-  const supabase = createClient();
-  const { error } = await supabase.rpc("start_draft");
-  if (error) backWithError(error.message);
-  revalidatePath("/home");
-  redirect("/home");
-}
-
 export async function makePick(teamId: string) {
   const supabase = createClient();
   const { error } = await supabase.rpc("make_pick", { p_team_id: teamId });
-  if (error) backWithError(error.message);
-  revalidatePath("/home");
-  redirect("/home");
-}
-
-export async function adminAutopick() {
-  const supabase = createClient();
-  const { error } = await supabase.rpc("admin_autopick");
   if (error) backWithError(error.message);
   revalidatePath("/home");
   redirect("/home");
