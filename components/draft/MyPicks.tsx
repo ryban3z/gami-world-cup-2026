@@ -15,20 +15,22 @@ export default function MyPicks({
   isMyTurn: boolean;
 }) {
   const slots = myPickSlots(myTeamIds, board, slotCount);
-  const filled = myTeamIds.length;
+  // Count actually-rendered teams (not raw ids) so the "pick now" highlight
+  // can't point at the wrong slot if an id is ever missing from the board.
+  const filled = slots.filter(Boolean).length;
 
   return (
     <section>
       <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-caption">
         My picks ({filled} / {slotCount})
       </h2>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {slots.map((slot, i) => {
           const isNextToPick = isMyTurn && i === filled;
           if (slot) {
             return (
               <div
-                key={i}
+                key={slot.name}
                 className="flex flex-1 flex-col items-center gap-1 rounded-lg border border-gold bg-panel p-3 text-center"
               >
                 {slot.flag_url && (
@@ -41,7 +43,7 @@ export default function MyPicks({
           }
           return (
             <div
-              key={i}
+              key={`empty-${i}`}
               className={[
                 "flex flex-1 items-center justify-center rounded-lg border border-dashed p-3 text-center text-[11px]",
                 isNextToPick ? "border-gold text-gold" : "border-glow text-caption",

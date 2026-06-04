@@ -19,6 +19,8 @@ export default function TurnBanner({
   const subline = `Pick ${ctx.pickNumber} of ${ctx.picksTotal} · Round ${ctx.round} · pick your ${ctx.teamOrdinal} team`;
 
   if (isMyTurn) {
+    // from-[#1a2350]: a one-off highlight a shade above `panel`, only used for
+    // this "on the clock" card. Promote to a theme token if reused elsewhere.
     return (
       <div className="rounded-xl border border-gold bg-gradient-to-b from-[#1a2350] to-panel p-4 text-center">
         <p className="text-lg font-black uppercase tracking-wide text-gold">
