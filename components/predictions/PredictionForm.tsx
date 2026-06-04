@@ -1,4 +1,4 @@
-import { savePredictions, lockPredictions } from "@/app/(app)/predictions/actions";
+import { savePredictions } from "@/app/(app)/predictions/actions";
 import SubmitButton from "@/components/SubmitButton";
 
 interface Category {
@@ -18,12 +18,10 @@ export default function PredictionForm({
   categories,
   teams,
   picksByKey,
-  isAdmin,
 }: {
   categories: Category[];
   teams: Team[];
   picksByKey: Record<string, string>;
-  isAdmin: boolean;
 }) {
   return (
     <div className="flex flex-col gap-5">
@@ -69,21 +67,6 @@ export default function PredictionForm({
           Save predictions
         </SubmitButton>
       </form>
-
-      {isAdmin && (
-        <form action={lockPredictions} className="rounded-xl border border-gold/40 bg-panel p-4">
-          <h2 className="text-xs font-bold uppercase tracking-wide text-gold">Admin</h2>
-          <SubmitButton
-            pendingLabel="Locking…"
-            className="mt-3 rounded-full border border-gold px-5 py-2 text-sm font-bold text-gold transition hover:bg-gold hover:text-navy"
-          >
-            Lock predictions (kickoff)
-          </SubmitButton>
-          <p className="mt-2 text-xs text-caption">
-            Closes the window and reveals everyone&apos;s picks. Can&apos;t be undone.
-          </p>
-        </form>
-      )}
     </div>
   );
 }
