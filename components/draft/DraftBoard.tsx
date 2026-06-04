@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import type { BoardTeam } from "./DraftStatus";
+import { pressable, focusRing } from "@/lib/ui";
 
 // Groups the 48 teams A–L. During the draft, available teams are tappable only
 // on your turn; tapping selects, then a confirm bar commits via makePick.
@@ -55,7 +56,7 @@ export default function DraftBoard({
                   disabled={!tappable}
                   onClick={() => tappable && setSelected(t)}
                   className={[
-                    "flex items-center gap-2 rounded-lg border p-2 text-left text-sm transition",
+                    `flex items-center gap-2 rounded-lg border p-2 text-left text-sm transition active:scale-95 ${focusRing}`,
                     t.taken
                       ? isMine
                         ? "border-gold/60 bg-panel text-gold"
@@ -92,14 +93,14 @@ export default function DraftBoard({
               <button
                 onClick={() => setSelected(null)}
                 disabled={pending}
-                className="rounded-full border border-glow px-4 py-2 text-sm text-caption"
+                className={`rounded-full border border-glow px-4 py-2 text-sm text-caption ${pressable}`}
               >
                 Cancel
               </button>
               <button
                 onClick={confirm}
                 disabled={pending}
-                className="rounded-full bg-gold px-5 py-2 text-sm font-bold text-navy transition hover:brightness-110 disabled:opacity-60"
+                className={`rounded-full bg-gold px-5 py-2 text-sm font-bold text-navy hover:brightness-110 active:brightness-90 disabled:opacity-60 ${pressable}`}
               >
                 {pending ? "Picking…" : "Confirm"}
               </button>

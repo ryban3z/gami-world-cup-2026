@@ -1,5 +1,6 @@
 "use client";
 import { useFormStatus } from "react-dom";
+import { pressable } from "@/lib/ui";
 
 // A submit button that reflects the parent <form>'s server-action state:
 // disables itself and shows a pending label while the action runs, so taps
@@ -19,7 +20,7 @@ export default function SubmitButton({
       type="submit"
       disabled={pending}
       aria-busy={pending}
-      className={`${className ?? ""} disabled:cursor-not-allowed disabled:opacity-70`}
+      className={`${className ?? ""} ${pressable} active:brightness-90 disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100`}
     >
       {pending ? pendingLabel ?? "Working…" : children}
     </button>

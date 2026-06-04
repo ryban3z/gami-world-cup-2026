@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import SubmitButton from "@/components/SubmitButton";
+import { pressable } from "@/lib/ui";
 
 // Two-step admin action button. First click "arms" it and reveals a
 // Confirm/Cancel prompt naming the consequence; only Confirm submits the
@@ -33,7 +34,7 @@ export default function ConfirmAction({
         <button
           type="button"
           onClick={() => setArmed(true)}
-          className={`rounded-full px-5 py-2 text-sm font-bold transition ${btn}`}
+          className={`rounded-full px-5 py-2 text-sm font-bold ${btn} ${pressable} active:brightness-90`}
         >
           {label}
         </button>
@@ -57,7 +58,7 @@ export default function ConfirmAction({
         <button
           type="button"
           onClick={() => setArmed(false)}
-          className="rounded-full border border-glow px-4 py-2 text-sm text-caption"
+          className={`rounded-full border border-glow px-4 py-2 text-sm text-caption ${pressable}`}
         >
           Cancel
         </button>

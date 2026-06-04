@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { branding } from "@/lib/config";
+import { pressable, pressableLink } from "@/lib/ui";
 import { signOut } from "../../(auth)/actions";
 import { makePick } from "../draft/actions";
 import DraftStatus, { type DraftState } from "@/components/draft/DraftStatus";
@@ -89,7 +90,7 @@ export default async function HomePage({
       {state?.is_admin && (
         <a
           href="/admin"
-          className="inline-block self-start rounded-full border border-gold/60 px-4 py-2 text-sm font-bold text-gold transition hover:bg-gold hover:text-navy"
+          className={`inline-block self-start rounded-full border border-gold/60 px-4 py-2 text-sm font-bold text-gold hover:bg-gold hover:text-navy ${pressable}`}
         >
           ⚙ Admin
         </a>
@@ -98,7 +99,7 @@ export default async function HomePage({
       {predictionsStarted && (
         <a
           href="/predictions"
-          className="inline-block rounded-full border border-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-gold transition hover:bg-gold hover:text-navy"
+          className={`inline-block rounded-full border border-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-gold hover:bg-gold hover:text-navy ${pressable}`}
         >
           Bonus predictions →
         </a>
@@ -140,7 +141,7 @@ export default async function HomePage({
       )}
 
       <form action={signOut}>
-        <button className="text-sm text-caption underline">Sign out</button>
+        <button className={`text-sm text-caption underline ${pressableLink}`}>Sign out</button>
       </form>
     </main>
   );

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { register } from "../actions";
 import SubmitButton from "@/components/SubmitButton";
+import { pressableLink } from "@/lib/ui";
 
 export default async function RegisterPage({
   searchParams,
@@ -28,7 +29,7 @@ export default async function RegisterPage({
         {searchParams.error && <p className="text-sm text-red-500">{searchParams.error}</p>}
         <SubmitButton pendingLabel="Creating…" className="rounded bg-gold p-3 font-bold text-navy transition hover:brightness-110">Register</SubmitButton>
       </form>
-      <a href="/login" className="text-sm underline">Already have an account? Log in</a>
+      <a href="/login" className={`self-start text-sm underline ${pressableLink}`}>Already have an account? Log in</a>
     </main>
   );
 }

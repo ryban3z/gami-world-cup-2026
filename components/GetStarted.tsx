@@ -2,9 +2,10 @@
 import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { enterGate } from "@/app/gate/actions";
+import { pressable } from "@/lib/ui";
 
 const goldPill =
-  "rounded-full bg-gold px-8 py-3 text-sm font-bold uppercase tracking-wide text-navy shadow-[0_0_24px_rgba(255,210,74,0.45)] transition hover:brightness-110 md:px-10 md:py-4 md:text-base";
+  `rounded-full bg-gold px-8 py-3 text-sm font-bold uppercase tracking-wide text-navy shadow-[0_0_24px_rgba(255,210,74,0.45)] hover:brightness-110 active:brightness-90 md:px-10 md:py-4 md:text-base ${pressable}`;
 
 function EnterButton() {
   const { pending } = useFormStatus();

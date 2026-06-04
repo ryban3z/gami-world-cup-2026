@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { phaseSteps, type GamePhase } from "@/lib/adminView";
+import { pressableLink } from "@/lib/ui";
 import PhaseBanner from "@/components/admin/PhaseBanner";
 import ConfirmAction from "@/components/admin/ConfirmAction";
 import {
@@ -50,7 +51,7 @@ export default async function AdminPage({
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-20 lg:max-w-3xl">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Admin control panel</h1>
-        <a href="/home" className="text-sm text-caption underline">
+        <a href="/home" className={`text-sm text-caption underline ${pressableLink}`}>
           ← Home
         </a>
       </header>
