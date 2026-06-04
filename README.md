@@ -64,11 +64,24 @@ If openfootball adds a team name the script can't map to a flag, it prints the u
 
 To rehearse the draft / picks and then start fresh, paste `supabase/dev/reset.sql` into the SQL Editor and Run. It wipes all picks, predictions, scores and ingested matches and resets `game_config` back to the `registration` phase — while keeping registered players, teams, categories, and config. **Run it before the real draft** to clear any test data. ⚠️ Destructive; don't run it mid-tournament.
 
-### ⚠️ Before the real draft (go-live checklist)
+### ⚠️ Going live: the real draft (runbook)
+
+Two parts — **clean up** the test state first, then **run the game** via the admin panel.
+
+**A. Cleanup (do these before opening registration):**
 
 1. **Remove the UI preview page** — delete `app/preview/draft/page.tsx` and the `/preview` entry in `middleware.ts`'s `isPublic()`. It's a public fake-data mock of the draft dashboard, only for previewing the UI before the game is live.
-2. Run `supabase/dev/reset.sql` to clear any test draft/picks.
+2. Run `supabase/dev/reset.sql` to clear any test draft/picks (resets `game_config` to the `registration` phase).
 3. Delete throwaway test accounts from Supabase Auth.
+4. Confirm migrations `0008` (admin RPC) and the `0009` categories seed are applied (the admin registration toggle and all 8 bonus categories depend on them).
+
+**B. Run the game (all via `/admin`, visible to admins as a "⚙ Admin" link on `/home`):**
+
+5. **Open registration** → share the site password; friends register at `/gate` → `/register`.
+6. When everyone's in, **Start draft** — randomises pick order, closes registration, and opens the bonus-prediction window. ⚠️ One-way; don't hit it early.
+7. Run the snake draft. Players pick on their turn; use **Auto-pick for {player}** only after nudging anyone who stalls. The draft auto-reveals (phase → `group_locked`) once the last pick is in.
+8. Players fill **bonus predictions** at `/predictions` (all 8 categories) — editable any time until lock.
+9. At kickoff (**2026-06-11**), **Lock predictions** — closes the window and reveals everyone's picks. ⚠️ Can't be undone.
 
 ## Deploy (Vercel)
 
