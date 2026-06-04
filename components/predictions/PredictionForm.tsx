@@ -1,6 +1,10 @@
 import { savePredictions } from "@/app/(app)/predictions/actions";
 import SubmitButton from "@/components/SubmitButton";
 
+// Categories whose picks are teams (rendered as dropdowns). All other
+// categories are free text.
+const TEAM_PICK_KEYS = new Set(["tournament_winner", "runner_up", "wooden_spoon"]);
+
 interface Category {
   id: string;
   key: string;
@@ -11,8 +15,8 @@ interface Team {
   name: string;
 }
 
-// Editable form: 2 inputs per active category. The Tournament Winner category
-// (key 'tournament_winner') renders team dropdowns; the rest are free text.
+// Editable form: 2 inputs per active category. Team-pick categories (see
+// TEAM_PICK_KEYS) render team dropdowns; the rest are free text.
 // Prefilled from the caller's existing picks. One Save action for the whole form.
 export default function PredictionForm({
   categories,
@@ -28,7 +32,7 @@ export default function PredictionForm({
       <form action={savePredictions} className="flex flex-col gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
           {categories.map((c) => {
-          const isWinner = c.key === "tournament_winner";
+          const isTeam = TEAM_PICK_KEYS.has(c.key);
           return (
             <div key={c.id} className="rounded-xl border border-glow bg-panel p-4">
               <h3 className="mb-2 text-sm font-bold text-gold">{c.name}</h3>
@@ -36,7 +40,7 @@ export default function PredictionForm({
                 {[1, 2].map((slot) => {
                   const name = `c_${c.id}_${slot}`;
                   const val = picksByKey[`${c.id}_${slot}`] ?? "";
-                  return isWinner ? (
+                  return isTeam ? (
                     <select key={slot} name={name} defaultValue={val} className="rounded border p-3">
                       <option value="">— pick a team —</option>
                       {teams.map((t) => (
