@@ -13,7 +13,11 @@ async function call(rpc: string, args?: Record<string, unknown>): Promise<never>
   const supabase = createClient();
   const { error } = await supabase.rpc(rpc, args);
   if (error) back(error.message);
+  // Admin actions change phase/config that the friend-facing pages render,
+  // so revalidate those too (not just /admin).
   revalidatePath("/admin");
+  revalidatePath("/home");
+  revalidatePath("/predictions");
   back();
 }
 

@@ -34,7 +34,7 @@ export default async function AdminPage({
   const [{ data: cfg }, { data: draft }] = await Promise.all([
     supabase
       .from("game_config")
-      .select("registration_open, predictions_open, predictions_locked_at")
+      .select("registration_open, predictions_open")
       .eq("id", 1)
       .single(),
     supabase.rpc("draft_state"),
