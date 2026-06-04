@@ -62,6 +62,12 @@ If openfootball adds a team name the script can't map to a flag, it prints the u
 
 To rehearse the draft / picks and then start fresh, paste `supabase/dev/reset.sql` into the SQL Editor and Run. It wipes all picks, predictions, scores and ingested matches and resets `game_config` back to the `registration` phase — while keeping registered players, teams, categories, and config. **Run it before the real draft** to clear any test data. ⚠️ Destructive; don't run it mid-tournament.
 
+### ⚠️ Before the real draft (go-live checklist)
+
+1. **Remove the UI preview page** — delete `app/preview/draft/page.tsx` and the `/preview` entry in `middleware.ts`'s `isPublic()`. It's a public fake-data mock of the draft dashboard, only for previewing the UI before the game is live.
+2. Run `supabase/dev/reset.sql` to clear any test draft/picks.
+3. Delete throwaway test accounts from Supabase Auth.
+
 ## Deploy (Vercel)
 
 Import the repo in Vercel, add every variable from `.env.local.example` as a Project Environment Variable (production values), and deploy. A second group = a separate Vercel project + Supabase project with its own env values.
