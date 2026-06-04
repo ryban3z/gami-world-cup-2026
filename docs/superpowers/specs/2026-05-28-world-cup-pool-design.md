@@ -71,7 +71,7 @@ Scope is **submission + kickoff lock only** — scoring resolution (admin markin
 - **`submit_bonus_pick(category_id, slot, value)`** — *authenticated `security definer`.* Requires `predictions_open = true`; validates `slot in (1,2)` and an active category; upserts the caller's active `bonus_predictions` row (keyed by the existing `uq_active_bonus_pick` unique index). Direct client writes stay denied (deny-by-default), so the open-window rule can't be bypassed.
 - **Visibility (RLS on `bonus_predictions`):** a `select` policy allowing rows where `user_id = auth.uid()` **OR** `game_config.predictions_locked_at is not null` — own picks always; everyone's once locked. `bonus_categories` is already readable; the page reads picks directly under RLS (no read RPC needed — unlike the draft, nothing is hidden beyond ownership).
 
-**Input format:** *Tournament Winner* uses a **team dropdown** (from the 48 seeded `teams`); the other four are **free text** (no player roster is seeded — the admin judges matches at scoring time).
+**Input format:** **team-pick** categories use a **team dropdown** (from the 48 seeded `teams`); the rest are **free text** (no player roster is seeded — the admin judges matches at scoring time). The team-pick set is keyed in `PredictionForm` by `TEAM_PICK_KEYS` (`tournament_winner`, `runner_up`, `wooden_spoon`); see the bonus-categories list below for the current split.
 
 **UI — `/predictions`** (gated, mobile-first, gold theme): one card per category with its 2 inputs and a single **Save** action; a status line ("Predictions open — locked at kickoff" / "Locked — everyone's picks below"); **admin-only "Lock predictions (kickoff)"** button on the same page. After lock, a read-only reveal of all players' picks grouped by category. The home page links to `/predictions` once the window is open; `/predictions` is gated behind auth in middleware (like `/draft`).
 
@@ -123,12 +123,17 @@ Exact games, format, and point values are **TBD** — captured here as a directi
 
 **Bonus predictions:** 2 picks per category, **8 points** per correct pick (a player can score on at most one pick per category). Resolved manually by the admin (`bonus_categories.resolved_answer`).
 
-**Bonus categories (draft list):**
-1. Golden Boot — Top Scorer
-2. Golden Ball — Best Player
-3. Golden Glove — Best Goalkeeper
-4. Best Young Player
-5. Tournament Winner (which team lifts the trophy)
+> **⚠️ Scoring-build note (free-text matching):** the 5 free-text categories store whatever the player typed, so scoring **cannot** do a naïve string equality against `resolved_answer` (case, accents, "Mbappé" vs "Mbappe", "K. Mbappé" vs "Kylian Mbappé" all differ). The scoring build must **normalise before comparing** (trim, casefold, strip accents/punctuation) and/or have the admin resolve each free-text category by **picking from the distinct submitted values** rather than typing a canonical answer — so the answer always matches at least the intended submissions. Team-pick categories are safe (dropdown values come from seeded `teams`). Decide the exact matching strategy when building scoring.
+
+**Bonus categories (current list — 8, updated 2026-06-04):** *team-pick = dropdown, else free text.*
+1. Golden Boot — Top Scorer *(free text)*
+2. Golden Ball — Best Player *(free text)*
+3. Golden Glove — Best Goalkeeper *(free text)*
+4. Best Young Player *(free text)*
+5. Tournament Winner *(team pick)*
+6. Runner-Up — Losing Finalist *(team pick)* — added 2026-06-04
+7. Most Assists — Playmaker *(free text)* — added 2026-06-04
+8. Wooden Spoon — Worst Team *(team pick)* — added 2026-06-04
 
 ### Results Data Source (validated 2026-06-02)
 
@@ -354,7 +359,8 @@ create table scores (
 ## Open Questions / TBD
 
 - [x] ~~Exact points breakdown per round~~ — draft values set (see Scoring); seeded into `scoring_rules` + `scoring_config`, tunable before kickoff
-- [x] ~~Bonus prediction categories~~ — draft list of 5 set (see Scoring); seed into `bonus_categories`
+- [x] ~~Bonus prediction categories~~ — **8 categories** live (5 free-text + 3 team-pick; expanded from 5 on 2026-06-04 — see Scoring); seeded into `bonus_categories`
+- [ ] **Free-text bonus scoring — matching strategy TBD** (build with scoring): the 5 free-text categories need normalised comparison or admin-resolve-from-submitted-values, not naïve string equality. See the ⚠️ scoring-build note under Scoring.
 - [x] ~~Knockout re-allocation mechanic~~ — **Free-agent pickup** chosen (2026-06-03): one optional swap — drop one team + claim one unowned R32 team. Supersedes the earlier Option B blind swap; Option A (fresh snake draft) kept as fallback. **Allocation order under contention still TBD** (reverse-standings priority or a mini-game).
 - [ ] In-tournament bonus games — exact games, answer format (recommended: multiple-choice, blind-until-deadline, auto-scored), and point values TBD. See *In-tournament Bonus Games*.
 - [x] ~~Draft time window value for `draft_pick_window_secs`~~ — **48h** (172800s), chosen because the group spans time zones; auto-advance cap, not expected pace. Mitigate deadline risk by opening the draft early. Tunable in `game_config`.
