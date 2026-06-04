@@ -18,14 +18,12 @@ export default async function PredictionsPage({
 
   const [
     { data: cfg },
-    { data: me },
     { data: categories },
     { data: teams },
     { data: picks },
     { data: profiles },
   ] = await Promise.all([
     supabase.from("game_config").select("predictions_open, predictions_locked_at").eq("id", 1).single(),
-    supabase.from("profiles").select("is_admin").eq("id", user.id).single(),
     supabase.from("bonus_categories").select("id, key, name").eq("is_active", true).order("name"),
     supabase.from("teams").select("id, name").order("name"),
     supabase.from("bonus_predictions").select("user_id, category_id, pick_slot, pick_value"),
@@ -34,7 +32,6 @@ export default async function PredictionsPage({
 
   const open = cfg?.predictions_open ?? false;
   const locked = cfg?.predictions_locked_at != null;
-  const isAdmin = me?.is_admin ?? false;
   const cats = categories ?? [];
   const allPicks = picks ?? [];
 
@@ -69,7 +66,7 @@ export default async function PredictionsPage({
       )}
 
       {open && !locked && (
-        <PredictionForm categories={cats} teams={teams ?? []} picksByKey={picksByKey} isAdmin={isAdmin} />
+        <PredictionForm categories={cats} teams={teams ?? []} picksByKey={picksByKey} />
       )}
 
       {locked && (

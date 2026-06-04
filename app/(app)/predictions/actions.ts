@@ -31,11 +31,3 @@ export async function savePredictions(formData: FormData) {
   revalidatePath("/predictions");
   redirect("/predictions?saved=1");
 }
-
-export async function lockPredictions() {
-  const supabase = createClient();
-  const { error } = await supabase.rpc("lock_predictions");
-  if (error) redirect(`/predictions?error=${encodeURIComponent(error.message)}`);
-  revalidatePath("/predictions");
-  redirect("/predictions");
-}

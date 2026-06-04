@@ -6,7 +6,6 @@ import { makePick } from "../draft/actions";
 import DraftStatus, { type DraftState } from "@/components/draft/DraftStatus";
 import DraftBoard from "@/components/draft/DraftBoard";
 import Rosters from "@/components/draft/Rosters";
-import AdminControls from "@/components/draft/AdminControls";
 import TurnBanner from "@/components/draft/TurnBanner";
 import DraftOrderRail from "@/components/draft/DraftOrderRail";
 import MyPicks from "@/components/draft/MyPicks";
@@ -88,7 +87,12 @@ export default async function HomePage({
       )}
 
       {state?.is_admin && (
-        <AdminControls phase={phase} currentUserName={state?.current_user_name ?? null} />
+        <a
+          href="/admin"
+          className="inline-block self-start rounded-full border border-gold/60 px-4 py-2 text-sm font-bold text-gold transition hover:bg-gold hover:text-navy"
+        >
+          ⚙ Admin
+        </a>
       )}
 
       {predictionsStarted && (
