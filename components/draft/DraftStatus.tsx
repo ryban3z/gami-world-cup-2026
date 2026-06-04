@@ -35,7 +35,7 @@ export interface DraftState {
 }
 
 export default function DraftStatus({ state }: { state: DraftState }) {
-  const { phase, is_my_turn, current_user_name, picks_made, picks_total } = state;
+  const { phase, picks_total } = state;
 
   if (phase === "registration") {
     return (
@@ -45,22 +45,7 @@ export default function DraftStatus({ state }: { state: DraftState }) {
     );
   }
 
-  if (phase === "draft") {
-    return (
-      <div className="flex flex-col gap-1">
-        <p className="text-lg font-bold">
-          {is_my_turn ? (
-            <span className="text-gold">It&apos;s YOUR turn — pick a team</span>
-          ) : (
-            <>Waiting on <span className="text-white">{current_user_name}</span>…</>
-          )}
-        </p>
-        <p className="text-sm text-caption">Pick {picks_made + 1} of {picks_total}</p>
-      </div>
-    );
-  }
-
-  // group_locked and beyond
+  // group_locked and beyond (the draft phase is handled by TurnBanner on /home)
   return (
     <p className="text-lg font-bold text-gold">
       Draft complete — all {picks_total} picks are in. Rosters revealed below.

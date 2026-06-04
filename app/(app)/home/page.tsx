@@ -7,6 +7,9 @@ import DraftStatus, { type DraftState } from "@/components/draft/DraftStatus";
 import DraftBoard from "@/components/draft/DraftBoard";
 import Rosters from "@/components/draft/Rosters";
 import AdminControls from "@/components/draft/AdminControls";
+import TurnBanner from "@/components/draft/TurnBanner";
+import DraftOrderRail from "@/components/draft/DraftOrderRail";
+import MyPicks from "@/components/draft/MyPicks";
 
 export const dynamic = "force-dynamic"; // always reflect live game state
 
@@ -59,7 +62,30 @@ export default async function HomePage({
         </p>
       )}
 
-      {state && <DraftStatus state={state} />}
+      {state && phase === "draft" ? (
+        <>
+          <TurnBanner
+            isMyTurn={state.is_my_turn}
+            currentUserName={state.current_user_name}
+            picksMade={state.picks_made}
+            picksTotal={state.picks_total}
+            playerCount={state.order_names.length}
+          />
+          <DraftOrderRail
+            orderNames={state.order_names}
+            picksMade={state.picks_made}
+            playerCount={state.order_names.length}
+          />
+          <MyPicks
+            myTeamIds={state.my_team_ids}
+            board={state.board}
+            slotCount={state.picks_total / state.order_names.length}
+            isMyTurn={state.is_my_turn}
+          />
+        </>
+      ) : (
+        state && <DraftStatus state={state} />
+      )}
 
       {state?.is_admin && (
         <AdminControls phase={phase} currentUserName={state?.current_user_name ?? null} />
