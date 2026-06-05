@@ -2,10 +2,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { GATE_COOKIE } from "@/lib/gate";
 
-// Public, ungated routes: the marketing landing page, the gate itself, and the
-// fake-data UI preview pages (no real game state, safe to expose).
+// Public, ungated routes: the marketing landing page and the gate itself.
 function isPublic(pathname: string): boolean {
-  return pathname === "/" || pathname.startsWith("/gate") || pathname.startsWith("/preview");
+  return pathname === "/" || pathname.startsWith("/gate");
 }
 
 export async function middleware(request: NextRequest) {

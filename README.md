@@ -70,7 +70,7 @@ Two parts — **clean up** the test state first, then **run the game** via the a
 
 **A. Cleanup (do these before opening registration):**
 
-1. **Remove the UI preview page** — delete `app/preview/draft/page.tsx` and the `/preview` entry in `middleware.ts`'s `isPublic()`. It's a public fake-data mock of the draft dashboard, only for previewing the UI before the game is live.
+1. ~~**Remove the UI preview page**~~ — ✅ done before go-live. The public fake-data `/preview/draft` mock and its `middleware.ts` `isPublic()` entry have been removed from the repo (the route no longer exists).
 2. Run `supabase/dev/reset.sql` to clear any test draft/picks (resets `game_config` to the `registration` phase).
 3. Delete throwaway test accounts from Supabase Auth.
 4. Confirm migrations `0008` (admin RPC) and the `0009` categories seed are applied (the admin registration toggle and all 8 bonus categories depend on them).
