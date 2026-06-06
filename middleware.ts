@@ -23,6 +23,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/home") ||
     pathname.startsWith("/draft") ||
     pathname.startsWith("/predictions") ||
+    pathname.startsWith("/managers") ||
     pathname.startsWith("/admin");
   if (gated && needsAuth && !user) {
     return NextResponse.redirect(new URL("/login", request.url));
