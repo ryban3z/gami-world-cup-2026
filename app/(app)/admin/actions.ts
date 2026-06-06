@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { runIngest, runRecalc } from "@/lib/pipeline";
 
 // All admin actions return to /admin. On RPC error, surface the message in
 // the page's error banner via the query string.
@@ -39,4 +40,54 @@ export async function adminAutopick() {
 
 export async function lockPredictions() {
   await call("lock_predictions");
+}
+
+async function requireAdmin(): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: me } = await supabase
+    .from("profiles").select("is_admin").eq("id", user?.id ?? "").single();
+  if (!me?.is_admin) back("admins only");
+}
+
+function done(): never {
+  revalidatePath("/admin");
+  revalidatePath("/home");
+  back();
+}
+
+export async function refreshResults() {
+  await requireAdmin();
+  try {
+    await runIngest();
+  } catch (e) {
+    back(e instanceof Error ? e.message : String(e));
+  }
+  done();
+}
+
+export async function overrideMatch(formData: FormData) {
+  await requireAdmin();
+  const supabase = createClient();
+  const { error } = await supabase.rpc("admin_override_match", {
+    p_match_id: String(formData.get("match_id")),
+    p_home_score: Number(formData.get("home_score")),
+    p_away_score: Number(formData.get("away_score")),
+    p_status: String(formData.get("status")),
+  });
+  if (error) back(error.message);
+  try { await runRecalc(); } catch (e) { back(e instanceof Error ? e.message : String(e)); }
+  done();
+}
+
+export async function resolveCategory(formData: FormData) {
+  await requireAdmin();
+  const supabase = createClient();
+  const { error } = await supabase.rpc("admin_resolve_category", {
+    p_category_id: String(formData.get("category_id")),
+    p_answer: String(formData.get("answer") ?? ""),
+  });
+  if (error) back(error.message);
+  try { await runRecalc(); } catch (e) { back(e instanceof Error ? e.message : String(e)); }
+  done();
 }
