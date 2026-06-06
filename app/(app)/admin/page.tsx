@@ -4,12 +4,15 @@ import { phaseSteps, type GamePhase } from "@/lib/adminView";
 import { pressableLink } from "@/lib/ui";
 import PhaseBanner from "@/components/admin/PhaseBanner";
 import ConfirmAction from "@/components/admin/ConfirmAction";
+import MatchOverride, { type OverrideMatch } from "@/components/admin/MatchOverride";
+import BonusResolve, { type ResolveCategory } from "@/components/admin/BonusResolve";
 import {
   openRegistration,
   closeRegistration,
   startDraft,
   adminAutopick,
   lockPredictions,
+  refreshResults,
 } from "./actions";
 
 export const dynamic = "force-dynamic"; // always reflect live game state
@@ -32,14 +35,35 @@ export default async function AdminPage({
     .single();
   if (!me?.is_admin) redirect("/home");
 
-  const [{ data: cfg }, { data: draft }] = await Promise.all([
-    supabase
-      .from("game_config")
-      .select("registration_open, predictions_open")
-      .eq("id", 1)
-      .single(),
-    supabase.rpc("draft_state"),
-  ]);
+  const [{ data: cfg }, { data: draft }, { data: matchRows }, { data: cats }, { data: preds }] =
+    await Promise.all([
+      supabase.from("game_config").select("registration_open, predictions_open, last_results_sync_at").eq("id", 1).single(),
+      supabase.rpc("draft_state"),
+      supabase
+        .from("matches")
+        .select("id, stage, group_letter, status, home_score, away_score, is_manual_override, home:home_team_id(name), away:away_team_id(name)")
+        .order("kickoff_at"),
+      supabase.from("bonus_categories").select("id, name, resolved_answer").eq("is_active", true).order("name"),
+      supabase.from("bonus_predictions").select("category_id, pick_value").eq("is_active", true),
+    ]);
+
+  const lastSync = cfg?.last_results_sync_at ?? null;
+  const overrideMatches: OverrideMatch[] = (matchRows ?? []).map((m: any) => ({
+    id: m.id,
+    label: `${m.stage.toUpperCase()}${m.group_letter ? " " + m.group_letter : ""} — ${m.home?.name ?? "TBD"} vs ${m.away?.name ?? "TBD"}`,
+    home_score: m.home_score, away_score: m.away_score, status: m.status,
+    is_manual_override: m.is_manual_override,
+  }));
+  const suggestionsByCat = new Map<string, Set<string>>();
+  for (const p of preds ?? []) {
+    const set = suggestionsByCat.get(p.category_id) ?? new Set<string>();
+    set.add(p.pick_value);
+    suggestionsByCat.set(p.category_id, set);
+  }
+  const resolveCategories: ResolveCategory[] = (cats ?? []).map((c: any) => ({
+    id: c.id, name: c.name, resolved_answer: c.resolved_answer ?? null,
+    suggestions: [...(suggestionsByCat.get(c.id) ?? [])].sort(),
+  }));
 
   const state = draft as { phase: GamePhase; current_user_name: string | null } | null;
   const phase: GamePhase = state?.phase ?? "registration";
@@ -128,6 +152,23 @@ export default async function AdminPage({
           />
         </section>
       )}
+
+      <section className="rounded-xl border border-gold/40 bg-panel p-4">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-gold">Results</h2>
+        <p className="mb-3 text-xs text-caption">
+          Last synced: {lastSync ? new Date(lastSync).toLocaleString() : "never"}
+        </p>
+        <ConfirmAction
+          action={refreshResults}
+          label="Refresh results now"
+          pendingLabel="Refreshing…"
+          confirmPrompt="Fetch the latest results from football-data.org and recompute scores. Confirm?"
+          description="Runs the ingest + recalc pipeline."
+        />
+      </section>
+
+      <BonusResolve categories={resolveCategories} />
+      <MatchOverride matches={overrideMatches} />
     </main>
   );
 }
