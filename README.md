@@ -46,6 +46,8 @@ The landing page runs with no backend. The core app (gate + auth + data) needs a
    8. `supabase/migrations/0007_registered_count.sql` — exposes the registered-player count to the public landing page.
    9. `supabase/migrations/0008_admin_registration.sql` — admin-guarded `set_registration_open` RPC (powers the /admin registration toggle).
    10. `supabase/seed/0009_more_bonus_categories.sql` — three extra bonus categories (Runner-Up, Most Assists, Wooden Spoon). Idempotent; apply before the prediction window opens.
+   11. `supabase/migrations/0010_manager_summary.sql` — adds `profiles.summary` (the per-manager profile blurb shown on `/managers/[id]`).
+   12. `supabase/seed/0011_seed_summaries.sql` — the manager summary blurbs (idempotent `update`s keyed by `display_name`). Apply any time after the draft.
 4. **Disable email confirmation:** Supabase → Authentication → Sign In / Providers → Email → turn **off "Confirm email"** (so friends can register and log in immediately without an SMTP setup).
 5. **Make yourself admin** (after registering): in the SQL Editor, run
    `update profiles set is_admin = true where display_name = '<your name>';`
