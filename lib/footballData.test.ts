@@ -1,0 +1,42 @@
+import { describe, it, expect } from "vitest";
+import { mapApiMatch } from "@/lib/footballData";
+
+const groupMatch = {
+  id: 537327, utcDate: "2026-06-11T19:00:00Z", stage: "GROUP_STAGE", group: "GROUP_A", status: "TIMED",
+  homeTeam: { id: 769 }, awayTeam: { id: 774 },
+  score: { winner: null, duration: "REGULAR", fullTime: { home: null, away: null } },
+};
+const finishedMatch = {
+  id: 537400, utcDate: "2026-06-20T16:00:00Z", stage: "GROUP_STAGE", group: "GROUP_B", status: "FINISHED",
+  homeTeam: { id: 770 }, awayTeam: { id: 771 },
+  score: { winner: "AWAY_TEAM", duration: "REGULAR", fullTime: { home: 1, away: 2 } },
+};
+const knockoutTbd = {
+  id: 537417, utcDate: "2026-06-28T19:00:00Z", stage: "LAST_32", group: null, status: "TIMED",
+  homeTeam: { id: null }, awayTeam: { id: null },
+  score: { winner: null, duration: "REGULAR", fullTime: { home: null, away: null } },
+};
+
+describe("mapApiMatch", () => {
+  it("maps a scheduled group match", () => {
+    expect(mapApiMatch(groupMatch)).toEqual({
+      externalId: "537327", stage: "group", groupLetter: "A",
+      homeExternalId: "769", awayExternalId: "774", kickoffAt: "2026-06-11T19:00:00Z",
+      status: "scheduled", homeScore: null, awayScore: null, winner: null,
+    });
+  });
+  it("maps a finished match with scores + winner", () => {
+    const m = mapApiMatch(finishedMatch);
+    expect(m.status).toBe("final");
+    expect(m.homeScore).toBe(1);
+    expect(m.awayScore).toBe(2);
+    expect(m.winner).toBe("AWAY_TEAM");
+  });
+  it("maps a knockout fixture with null teams", () => {
+    const m = mapApiMatch(knockoutTbd);
+    expect(m.stage).toBe("r32");
+    expect(m.groupLetter).toBeNull();
+    expect(m.homeExternalId).toBeNull();
+    expect(m.awayExternalId).toBeNull();
+  });
+});
