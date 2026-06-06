@@ -23,10 +23,12 @@ The landing page runs with no backend. The core app (gate + auth + data) needs a
 1. **Create a Supabase project** at https://supabase.com/dashboard.
 2. **Copy `.env.local.example` → `.env.local`** and fill in:
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — Project Settings → API.
-   - `SUPABASE_SECRET_KEY` — the secret key (only needed later, for scoring/cron).
+   - `SUPABASE_SECRET_KEY` — the secret key (used server-side by scoring/cron).
    - `SITE_PASSWORD` — the shared password you hand to friends.
    - `GATE_TOKEN` — any long random string (`openssl rand -hex 32`).
    - `NEXT_PUBLIC_POOL_NAME`, `NEXT_PUBLIC_TROPHY_NAME` — branding (per-deploy).
+   - `FOOTBALL_DATA_TOKEN` — football-data.org free API token (results ingestion).
+   - `CRON_SECRET` — long random string; Vercel Cron sends it as a bearer token to `/api/cron/ingest`.
 3. **Apply the SQL**, in order, via the Supabase **SQL Editor** (paste each file's contents and Run):
    1. `supabase/migrations/0001_initial_schema.sql`
    2. `supabase/migrations/0002_rls_policies.sql`
@@ -48,6 +50,9 @@ The landing page runs with no backend. The core app (gate + auth + data) needs a
    10. `supabase/seed/0009_more_bonus_categories.sql` — three extra bonus categories (Runner-Up, Most Assists, Wooden Spoon). Idempotent; apply before the prediction window opens.
    11. `supabase/migrations/0010_manager_summary.sql` — adds `profiles.summary` (the per-manager profile blurb shown on `/managers/[id]`).
    12. `supabase/seed/0011_seed_summaries.sql` — the manager summary blurbs (idempotent `update`s keyed by `display_name`). Apply any time after the draft.
+   13. `supabase/seed/0012_seed_matches.sql` — maps `teams.external_id` + seeds the 104 fixtures (results ingestion).
+   14. `supabase/migrations/0013_admin_results.sql` — admin override/resolve RPCs + `last_results_sync_at`.
+   15. `supabase/seed/0014_scoring_tune.sql` — rebalanced scoring values (apply before kickoff).
 4. **Disable email confirmation:** Supabase → Authentication → Sign In / Providers → Email → turn **off "Confirm email"** (so friends can register and log in immediately without an SMTP setup).
 5. **Make yourself admin** (after registering): in the SQL Editor, run
    `update profiles set is_admin = true where display_name = '<your name>';`
