@@ -1,6 +1,8 @@
 import type { BoardTeam, Roster } from "./DraftStatus";
+import { pressable } from "@/lib/ui";
 
-// After group_locked: one card per player with their 3 teams, in pick order.
+// After group_locked: one card per manager with their teams, in pick order.
+// Each card links to that manager's profile page.
 export default function Rosters({
   rosters,
   board,
@@ -12,7 +14,11 @@ export default function Rosters({
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {rosters.map((r) => (
-        <div key={r.user_id} className="rounded-xl border border-glow bg-panel p-4">
+        <a
+          key={r.user_id}
+          href={`/managers/${r.user_id}`}
+          className={`block rounded-xl border border-glow bg-panel p-4 hover:border-gold ${pressable}`}
+        >
           <h3 className="text-sm font-bold uppercase tracking-wide text-gold">
             {r.display_name}
           </h3>
@@ -30,7 +36,7 @@ export default function Rosters({
               );
             })}
           </ul>
-        </div>
+        </a>
       ))}
     </div>
   );
