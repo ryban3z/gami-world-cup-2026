@@ -35,3 +35,19 @@ export function phaseSteps(current: GamePhase): PhaseStep[] {
     status: i < idx ? "done" : i === idx ? "current" : "upcoming",
   }));
 }
+
+// Manual "Refresh results" is rate-limited server-side: football-data.org's free
+// tier allows 10 req/min and the daily cron covers normal updates, so we only
+// guard against impatient re-clicks. Returns how long (ms) until another refresh
+// is allowed — 0 means good to go.
+export const REFRESH_COOLDOWN_MS = 30_000;
+
+export function refreshCooldownRemainingMs(
+  lastSyncIso: string | null,
+  now: number = Date.now(),
+): number {
+  if (!lastSyncIso) return 0;
+  const last = new Date(lastSyncIso).getTime();
+  if (Number.isNaN(last)) return 0;
+  return Math.max(0, REFRESH_COOLDOWN_MS - (now - last));
+}

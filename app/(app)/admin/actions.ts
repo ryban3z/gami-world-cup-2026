@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { runIngest, runRecalc } from "@/lib/pipeline";
+import { refreshCooldownRemainingMs } from "@/lib/adminView";
 
 // All admin actions return to /admin. On RPC error, surface the message in
 // the page's error banner via the query string.
@@ -58,6 +59,17 @@ function done(): never {
 
 export async function refreshResults() {
   await requireAdmin();
+  // Server-side cooldown — can't be bypassed by double-clicking the button.
+  const supabase = createClient();
+  const { data: cfg } = await supabase
+    .from("game_config")
+    .select("last_results_sync_at")
+    .eq("id", 1)
+    .single();
+  const remaining = refreshCooldownRemainingMs(cfg?.last_results_sync_at ?? null);
+  if (remaining > 0) {
+    back(`Just synced — wait ${Math.ceil(remaining / 1000)}s before refreshing again.`);
+  }
   try {
     await runIngest();
   } catch (e) {

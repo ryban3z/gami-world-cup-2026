@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { phaseSteps } from "./adminView";
+import { phaseSteps, refreshCooldownRemainingMs, REFRESH_COOLDOWN_MS } from "./adminView";
 
 describe("phaseSteps", () => {
   it("marks the first phase current at registration, the rest upcoming", () => {
@@ -49,5 +49,32 @@ describe("phaseSteps", () => {
       "knockout_locked",
       "complete",
     ]);
+  });
+});
+
+describe("refreshCooldownRemainingMs", () => {
+  const now = new Date("2026-06-20T12:00:00Z").getTime();
+
+  it("returns 0 when never synced", () => {
+    expect(refreshCooldownRemainingMs(null, now)).toBe(0);
+  });
+
+  it("returns 0 for an unparseable timestamp", () => {
+    expect(refreshCooldownRemainingMs("not-a-date", now)).toBe(0);
+  });
+
+  it("returns 0 once the cooldown window has fully elapsed", () => {
+    const last = new Date(now - REFRESH_COOLDOWN_MS - 1).toISOString();
+    expect(refreshCooldownRemainingMs(last, now)).toBe(0);
+  });
+
+  it("returns the remaining ms during the cooldown window", () => {
+    const last = new Date(now - 10_000).toISOString();
+    expect(refreshCooldownRemainingMs(last, now)).toBe(REFRESH_COOLDOWN_MS - 10_000);
+  });
+
+  it("returns the full window for a sync that just happened", () => {
+    const last = new Date(now).toISOString();
+    expect(refreshCooldownRemainingMs(last, now)).toBe(REFRESH_COOLDOWN_MS);
   });
 });

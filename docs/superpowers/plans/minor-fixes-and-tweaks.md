@@ -7,7 +7,7 @@ self-contained note with enough detail to act on. Check off when done.
 
 ## Open
 
-### [ ] "Last synced" timestamp shows US format + UTC, not local
+### [x] "Last synced" timestamp shows US format + UTC, not local
 
 **Where:** `app/(app)/admin/page.tsx` — the Results section renders
 `Last synced: {new Date(lastSync).toLocaleString()}`.
@@ -36,7 +36,7 @@ defer to the viewer's browser locale — decide which when implementing.)
 
 ---
 
-### [ ] Cooldown + warning on the "Refresh results now" button
+### [x] Cooldown + warning on the "Refresh results now" button
 
 **Where:** `app/(app)/admin/actions.ts` (`refreshResults`) + the Results section in
 `app/(app)/admin/page.tsx`.

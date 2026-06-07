@@ -6,6 +6,7 @@ import PhaseBanner from "@/components/admin/PhaseBanner";
 import ConfirmAction from "@/components/admin/ConfirmAction";
 import MatchOverride, { type OverrideMatch } from "@/components/admin/MatchOverride";
 import BonusResolve, { type ResolveCategory } from "@/components/admin/BonusResolve";
+import SyncedAt from "@/components/admin/SyncedAt";
 import {
   openRegistration,
   closeRegistration,
@@ -156,7 +157,7 @@ export default async function AdminPage({
       <section className="rounded-xl border border-gold/40 bg-panel p-4">
         <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-gold">Results</h2>
         <p className="mb-3 text-xs text-caption">
-          Last synced: {lastSync ? new Date(lastSync).toLocaleString() : "never"}
+          Last synced: <SyncedAt iso={lastSync} />
         </p>
         <ConfirmAction
           action={refreshResults}
@@ -165,6 +166,9 @@ export default async function AdminPage({
           confirmPrompt="Fetch the latest results from football-data.org and recompute scores. Confirm?"
           description="Runs the ingest + recalc pipeline."
         />
+        <p className="mt-2 text-xs text-caption">
+          Auto-syncs daily; manual refresh is rate-limited to once every 30s.
+        </p>
       </section>
 
       <BonusResolve categories={resolveCategories} />
