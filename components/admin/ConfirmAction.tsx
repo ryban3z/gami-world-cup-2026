@@ -1,7 +1,39 @@
 "use client";
-import { useState } from "react";
-import SubmitButton from "@/components/SubmitButton";
+import { useState, useEffect, useRef } from "react";
+import { useFormStatus } from "react-dom";
 import { pressable } from "@/lib/ui";
+
+// Confirm submit button: reflects the form's pending state and, when the
+// action finishes (pending goes true → false), calls onComplete so the parent
+// can collapse the prompt back to its single button. Needed because admin
+// actions redirect to /admin (same page), which keeps this client component
+// mounted — so its armed state would otherwise stick after completion.
+function ConfirmSubmit({
+  pendingLabel,
+  className,
+  onComplete,
+}: {
+  pendingLabel: string;
+  className: string;
+  onComplete: () => void;
+}) {
+  const { pending } = useFormStatus();
+  const wasPending = useRef(false);
+  useEffect(() => {
+    if (wasPending.current && !pending) onComplete();
+    wasPending.current = pending;
+  }, [pending, onComplete]);
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      aria-busy={pending}
+      className={`${className} ${pressable} active:brightness-90 disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100`}
+    >
+      {pending ? pendingLabel : "Confirm"}
+    </button>
+  );
+}
 
 // Two-step admin action button. First click "arms" it and reveals a
 // Confirm/Cancel prompt naming the consequence; only Confirm submits the
@@ -48,12 +80,11 @@ export default function ConfirmAction({
       <p className="text-sm text-bodytext">{confirmPrompt}</p>
       <div className="mt-3 flex gap-2">
         <form action={action}>
-          <SubmitButton
+          <ConfirmSubmit
             pendingLabel={pendingLabel}
             className={`rounded-full px-5 py-2 text-sm font-bold transition ${btn}`}
-          >
-            Confirm
-          </SubmitButton>
+            onComplete={() => setArmed(false)}
+          />
         </form>
         <button
           type="button"
