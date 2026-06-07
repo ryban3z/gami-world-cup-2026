@@ -10,6 +10,8 @@ import Rosters from "@/components/draft/Rosters";
 import TurnBanner from "@/components/draft/TurnBanner";
 import DraftOrderRail from "@/components/draft/DraftOrderRail";
 import MyPicks from "@/components/draft/MyPicks";
+import LeaderboardSummary from "@/components/leaderboard/LeaderboardSummary";
+import { buildLeaderboard } from "@/lib/leaderboardView";
 
 export const dynamic = "force-dynamic"; // always reflect live game state
 
@@ -24,20 +26,28 @@ export default async function HomePage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: me }, { data: players }, { data: cfg }, { data: draft }] =
-    await Promise.all([
-      supabase.from("profiles").select("display_name").eq("id", user.id).single(),
-      supabase
-        .from("profiles")
-        .select("id, display_name")
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("game_config")
-        .select("predictions_open, predictions_locked_at")
-        .eq("id", 1)
-        .single(),
-      supabase.rpc("draft_state"),
-    ]);
+  const [
+    { data: me },
+    { data: players },
+    { data: cfg },
+    { data: draft },
+    { data: scores },
+    { data: teams },
+  ] = await Promise.all([
+    supabase.from("profiles").select("display_name").eq("id", user.id).single(),
+    supabase
+      .from("profiles")
+      .select("id, display_name")
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("game_config")
+      .select("predictions_open, predictions_locked_at")
+      .eq("id", 1)
+      .single(),
+    supabase.rpc("draft_state"),
+    supabase.from("scores").select("user_id, total_points, breakdown"),
+    supabase.from("teams").select("id, name, flag_url"),
+  ]);
 
   const state = (draft as DraftState | null) ?? null;
   const phase = state?.phase ?? "registration";
@@ -46,6 +56,9 @@ export default async function HomePage({
   const predictionsStarted =
     (cfg?.predictions_open ?? false) || cfg?.predictions_locked_at != null;
   const list = players ?? [];
+  const summaryRows = revealed
+    ? buildLeaderboard(scores ?? [], list, teams ?? [], user.id)
+    : [];
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-28 lg:max-w-4xl">
@@ -61,6 +74,8 @@ export default async function HomePage({
           {searchParams.error}
         </p>
       )}
+
+      {revealed && <LeaderboardSummary rows={summaryRows} />}
 
       {state && phase === "draft" ? (
         <>
