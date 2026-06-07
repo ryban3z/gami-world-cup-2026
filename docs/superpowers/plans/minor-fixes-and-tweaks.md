@@ -67,3 +67,24 @@ this only adds the post-completion cooldown.)
 
 **Test:** the cooldown branch is logic worth a quick unit extraction if convenient; otherwise
 verify via `npm run build` + a manual double-click.
+
+---
+
+### [ ] Per-pick bonus breakdown on the leaderboard
+
+**Where:** `lib/scoring.ts` (`computeScores`) + `lib/scoring.test.ts`; consumed by the leaderboard
+tap-to-expand panel (`components/leaderboard/LeaderboardTable.tsx`, `lib/leaderboardView.ts`).
+
+**Why:** the live dashboard (spec `docs/superpowers/specs/2026-06-07-live-dashboard-design.md`)
+ships with only an aggregate "Bonus: N pts" line. Bonus categories (Tournament Winner, Golden
+Boot, awards, etc.) almost all resolve at tournament's end, so per-pick detail has nothing to show
+during the group stage / most knockouts — deferred to keep the scoring engine untouched at launch.
+
+**Fix (when awards start landing, near tournament end):** add a `bonus_hits: [{category, pick,
+points}]` array to the `breakdown` jsonb inside `computeScores` (push an entry whenever a bonus pick
+matches `resolved_answer`). Since `scores` is recomputed from scratch each recalc, the next sync
+backfills it — no migration needed. Then surface it in `buildLeaderboard` (`LeaderRow.bonusHits`)
+and render a "Bonus picks" sub-list in the expand panel.
+
+**Test:** extend `lib/scoring.test.ts` for the `bonus_hits` shape; extend `lib/leaderboardView.test.ts`
+for rendering; components via `npm run build`.
