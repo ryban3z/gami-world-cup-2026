@@ -158,3 +158,50 @@ export function buildMyTeams(
   );
   return enriched.map((e) => e.status);
 }
+
+// Compact match strip: the most recent finished results and the next upcoming
+// fixtures. Team UUIDs resolve to name/flag (null → "TBD"); group-stage fixtures
+// get a "Group X" label, others the stage label.
+export function buildMatchStrip(
+  matches: MatchLite[],
+  teams: TeamLite[],
+  opts: { recent?: number; upcoming?: number } = {},
+): { recent: MatchStripItem[]; upcoming: MatchStripItem[] } {
+  const recentN = opts.recent ?? 5;
+  const upcomingN = opts.upcoming ?? 5;
+  const teamById = new Map(teams.map((t) => [t.id, t]));
+  const ms = (s: string | null) => (s ? new Date(s).getTime() : 0);
+
+  const toItem = (m: MatchLite): MatchStripItem => {
+    const home = m.home_team_id ? teamById.get(m.home_team_id) : undefined;
+    const away = m.away_team_id ? teamById.get(m.away_team_id) : undefined;
+    const stageLabel =
+      m.stage === "group" && m.group_letter ? `Group ${m.group_letter}` : STAGE_LABELS[m.stage];
+    return {
+      id: m.id,
+      stageLabel,
+      homeName: home?.name ?? "TBD",
+      homeFlag: home?.flag_url ?? null,
+      awayName: away?.name ?? "TBD",
+      awayFlag: away?.flag_url ?? null,
+      kickoffAt: m.kickoff_at,
+      homeScore: m.home_score,
+      awayScore: m.away_score,
+      status: m.status,
+    };
+  };
+
+  const recent = matches
+    .filter((m) => m.status === "final")
+    .sort((a, b) => ms(b.kickoff_at) - ms(a.kickoff_at))
+    .slice(0, recentN)
+    .map(toItem);
+
+  const upcoming = matches
+    .filter((m) => m.status !== "final")
+    .sort((a, b) => ms(a.kickoff_at) - ms(b.kickoff_at))
+    .slice(0, upcomingN)
+    .map(toItem);
+
+  return { recent, upcoming };
+}

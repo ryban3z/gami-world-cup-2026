@@ -133,3 +133,56 @@ describe("buildMyTeams", () => {
     });
   });
 });
+
+import { buildMatchStrip } from "@/lib/leaderboardView";
+
+describe("buildMatchStrip", () => {
+  const teams = [
+    { id: "t1", name: "Argentina", flag_url: "ar.png" },
+    { id: "t2", name: "Japan", flag_url: "jp.png" },
+  ];
+  function match(id: string, status: string, kickoff: string, extra = {}) {
+    return {
+      id, stage: "group", group_letter: "A",
+      home_team_id: "t1", away_team_id: "t2",
+      kickoff_at: kickoff, home_score: null, away_score: null,
+      winner_team_id: null, status, ...extra,
+    } as any;
+  }
+
+  it("splits finished (recent, newest first) from upcoming (soonest first)", () => {
+    const { recent, upcoming } = buildMatchStrip(
+      [
+        match("m1", "final", "2026-06-11T18:00:00Z", { home_score: 2, away_score: 1 }),
+        match("m2", "final", "2026-06-12T18:00:00Z", { home_score: 0, away_score: 0 }),
+        match("m3", "scheduled", "2026-06-13T18:00:00Z"),
+        match("m4", "scheduled", "2026-06-14T18:00:00Z"),
+      ],
+      teams,
+    );
+    expect(recent.map((m) => m.id)).toEqual(["m2", "m1"]);
+    expect(upcoming.map((m) => m.id)).toEqual(["m3", "m4"]);
+    expect(recent[1]).toMatchObject({ homeName: "Argentina", awayName: "Japan", homeScore: 2, awayScore: 1, stageLabel: "Group A" });
+  });
+
+  it("honours recent/upcoming counts", () => {
+    const ms = [
+      match("a", "final", "2026-06-01T00:00:00Z"),
+      match("b", "final", "2026-06-02T00:00:00Z"),
+      match("c", "final", "2026-06-03T00:00:00Z"),
+      match("d", "scheduled", "2026-06-10T00:00:00Z"),
+      match("e", "scheduled", "2026-06-11T00:00:00Z"),
+    ];
+    const { recent, upcoming } = buildMatchStrip(ms, teams, { recent: 2, upcoming: 1 });
+    expect(recent.map((m) => m.id)).toEqual(["c", "b"]);
+    expect(upcoming.map((m) => m.id)).toEqual(["d"]);
+  });
+
+  it("shows TBD for unresolved knockout teams and uses the stage label", () => {
+    const { upcoming } = buildMatchStrip(
+      [match("k", "scheduled", "2026-07-01T00:00:00Z", { stage: "r16", group_letter: null, home_team_id: null, away_team_id: "t2" })],
+      teams,
+    );
+    expect(upcoming[0]).toMatchObject({ homeName: "TBD", awayName: "Japan", stageLabel: "Round of 16" });
+  });
+});
