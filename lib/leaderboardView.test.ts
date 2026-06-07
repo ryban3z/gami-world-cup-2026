@@ -87,3 +87,49 @@ describe("buildLeaderboard", () => {
     expect([ada.group, ada.knockout, ada.bonus]).toEqual([5, 4, 3]);
   });
 });
+
+import { buildMyTeams } from "@/lib/leaderboardView";
+
+describe("buildMyTeams", () => {
+  const board = [
+    { id: "t1", name: "Argentina", flag_url: "ar.png" },
+    { id: "t2", name: "Japan", flag_url: "jp.png" },
+    { id: "t3", name: "USA", flag_url: null },
+    { id: "t4", name: "Brazil", flag_url: "br.png" },
+  ];
+
+  it("labels champion / eliminated / furthest stage", () => {
+    const out = buildMyTeams(
+      ["t1", "t2", "t3"],
+      board,
+      [
+        { team_id: "t1", furthest_stage: "final", is_eliminated: false, is_champion: true },
+        { team_id: "t2", furthest_stage: "r16", is_eliminated: true, is_champion: false },
+        { team_id: "t3", furthest_stage: "qf", is_eliminated: false, is_champion: false },
+      ],
+    );
+    const byName = Object.fromEntries(out.map((t) => [t.name, t.stageLabel]));
+    expect(byName).toEqual({ Argentina: "Champion", USA: "Quarter-final", Japan: "Eliminated" });
+  });
+
+  it("orders champion first, then alive (deepest first), eliminated last", () => {
+    const out = buildMyTeams(
+      ["t2", "t3", "t1", "t4"],
+      board,
+      [
+        { team_id: "t1", furthest_stage: "final", is_eliminated: false, is_champion: true },
+        { team_id: "t2", furthest_stage: "group", is_eliminated: true, is_champion: false },
+        { team_id: "t3", furthest_stage: "qf", is_eliminated: false, is_champion: false },
+        { team_id: "t4", furthest_stage: "r16", is_eliminated: false, is_champion: false },
+      ],
+    );
+    expect(out.map((t) => t.name)).toEqual(["Argentina", "USA", "Brazil", "Japan"]);
+  });
+
+  it("defaults a team with no standing row to Group / alive", () => {
+    const out = buildMyTeams(["t3"], board, []);
+    expect(out[0]).toEqual({
+      name: "USA", flagUrl: null, stageLabel: "Group", isEliminated: false, isChampion: false,
+    });
+  });
+});

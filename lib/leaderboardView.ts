@@ -115,3 +115,46 @@ export function buildLeaderboard(
     return { rank, ...r };
   });
 }
+
+// The viewer's teams joined with their standings, labelled and ordered for the
+// "My teams" panel. Champion first, then still-alive teams (deepest stage
+// first), eliminated teams last; alphabetical within a tier.
+export function buildMyTeams(
+  myTeamIds: string[],
+  board: TeamLite[],
+  standings: StandingLite[],
+): MyTeamStatus[] {
+  const teamById = new Map(board.map((t) => [t.id, t]));
+  const standingById = new Map(standings.map((s) => [s.team_id, s]));
+
+  const enriched = myTeamIds.map((id) => {
+    const t = teamById.get(id);
+    const s = standingById.get(id);
+    const stage: Stage = s?.furthest_stage ?? "group";
+    const isChampion = s?.is_champion ?? false;
+    const isEliminated = s?.is_eliminated ?? false;
+    const stageLabel = isChampion
+      ? "Champion"
+      : isEliminated
+        ? "Eliminated"
+        : STAGE_LABELS[stage];
+    const status: MyTeamStatus = {
+      name: t?.name ?? "—",
+      flagUrl: t?.flag_url ?? null,
+      stageLabel,
+      isEliminated,
+      isChampion,
+    };
+    // bucket: champion(0) < alive(1) < eliminated(2)
+    const bucket = isChampion ? 0 : isEliminated ? 2 : 1;
+    return { status, bucket, depth: STAGE_DEPTH[stage] };
+  });
+
+  enriched.sort(
+    (a, b) =>
+      a.bucket - b.bucket ||
+      b.depth - a.depth ||
+      a.status.name.localeCompare(b.status.name),
+  );
+  return enriched.map((e) => e.status);
+}
