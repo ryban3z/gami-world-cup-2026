@@ -2,7 +2,10 @@ import { savePredictions } from "@/app/(app)/predictions/actions";
 import SubmitButton from "@/components/SubmitButton";
 
 // Categories whose picks are teams (rendered as dropdowns). All other
-// categories are free text.
+// categories are free text. These are also single-pick: there's exactly one
+// winner / runner-up / worst team, so they get one slot, not two. Player
+// awards (Golden Boot, etc.) allow two guesses. Mirrors the DB guard in
+// save_bonus_category and the scoring engine's TEAM_PICK_KEYS.
 const TEAM_PICK_KEYS = new Set(["tournament_winner", "runner_up", "wooden_spoon"]);
 
 interface Category {
@@ -33,11 +36,13 @@ export default function PredictionForm({
         <div className="grid gap-4 sm:grid-cols-2">
           {categories.map((c) => {
           const isTeam = TEAM_PICK_KEYS.has(c.key);
+          // Team picks are single-pick (one slot); player awards get two.
+          const slots = isTeam ? [1] : [1, 2];
           return (
             <div key={c.id} className="rounded-xl border border-glow bg-panel p-4">
               <h3 className="mb-2 text-sm font-bold text-gold">{c.name}</h3>
               <div className="flex flex-col gap-2">
-                {[1, 2].map((slot) => {
+                {slots.map((slot) => {
                   const name = `c_${c.id}_${slot}`;
                   const val = picksByKey[`${c.id}_${slot}`] ?? "";
                   return isTeam ? (

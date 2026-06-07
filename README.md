@@ -53,6 +53,7 @@ The landing page runs with no backend. The core app (gate + auth + data) needs a
    13. `supabase/seed/0012_seed_matches.sql` — maps `teams.external_id` + seeds the 104 fixtures (results ingestion).
    14. `supabase/migrations/0013_admin_results.sql` — admin override/resolve RPCs + `last_results_sync_at`.
    15. `supabase/seed/0014_scoring_tune.sql` — rebalanced scoring values (apply before kickoff).
+   16. `supabase/migrations/0015_single_pick_team_categories.sql` — makes Tournament Winner / Runner-Up / Wooden Spoon single-pick (one slot, not two) and clears any stale slot-2 picks on those categories.
 4. **Disable email confirmation:** Supabase → Authentication → Sign In / Providers → Email → turn **off "Confirm email"** (so friends can register and log in immediately without an SMTP setup).
 5. **Make yourself admin** (after registering): in the SQL Editor, run
    `update profiles set is_admin = true where display_name = '<your name>';`

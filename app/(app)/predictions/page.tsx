@@ -48,7 +48,8 @@ export default async function PredictionsPage({
       <header>
         <h1 className="text-2xl font-bold">Bonus Predictions</h1>
         <p className="mt-1 text-sm text-bodytext">
-          2 picks per category — the two must differ. Locks at kickoff.
+          Two picks for player awards (must differ); one pick for the team
+          awards. Locks at kickoff.
         </p>
       </header>
 
