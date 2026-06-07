@@ -165,7 +165,7 @@ console.log(`Wrote ${teamLines.length} team maps + ${matchRows.length} fixtures 
 
 - [ ] **Step 2: Generate the seed**
 
-Run: `FOOTBALL_DATA_TOKEN=ffa7bb980d4d4c819e1dacde7abef3ac node scripts/generate-matches-seed.mjs`
+Run: `FOOTBALL_DATA_TOKEN=<your-football-data-token> node scripts/generate-matches-seed.mjs`
 Expected: `Wrote 48 team maps + 104 fixtures to supabase/seed/0012_seed_matches.sql`. (Stays under the 10 req/min limit — 2 calls.)
 
 - [ ] **Step 3: Spot-check the generated SQL**
