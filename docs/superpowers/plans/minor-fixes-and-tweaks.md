@@ -88,3 +88,33 @@ and render a "Bonus picks" sub-list in the expand panel.
 
 **Test:** extend `lib/scoring.test.ts` for the `bonus_hits` shape; extend `lib/leaderboardView.test.ts`
 for rendering; components via `npm run build`.
+
+---
+
+### [x] Add Vercel Analytics
+
+**Where:** `app/layout.tsx` (root layout) + `package.json`.
+
+**Why:** lightweight, privacy-friendly page-view analytics for the deployed app — see how the
+friends actually use it during the tournament. Free on Vercel Hobby; zero config beyond the package
++ component.
+
+**Fix:**
+
+1. Install: `npm i @vercel/analytics`
+2. In `app/layout.tsx`, import and render the component inside `<body>`:
+
+```tsx
+import { Analytics } from "@vercel/analytics/next";
+
+// …inside RootLayout's <body>, after {children}:
+<body className="font-sans">
+  {children}
+  <Analytics />
+</body>
+```
+
+3. Enable Analytics for the project in the Vercel dashboard (Project → Analytics tab) if not
+   already on. No env vars needed.
+
+**Test:** `npm run build`; after deploy, confirm hits appear in the Vercel Analytics tab.
