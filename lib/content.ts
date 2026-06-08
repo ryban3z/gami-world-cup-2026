@@ -46,8 +46,8 @@ export const STEPS: Step[] = [
 
 export const SCORING_ROWS: ScoringRow[] = [
   { label: "Qualify from group", value: "+5" },
-  { label: "Reach R16 / QF / SF", value: "6 / 10 / 14" },
-  { label: "Final · Champion", value: "18 / 24" },
+  { label: "Then reach R16 / QF / SF", value: "+6 / +10 / +14" },
+  { label: "Final · Champion", value: "+18 / +24" },
   { label: "Each correct bonus pick", value: "+4" },
 ];
 

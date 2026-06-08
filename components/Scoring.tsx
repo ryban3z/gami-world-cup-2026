@@ -20,9 +20,9 @@ export default function Scoring() {
         ))}
       </div>
       <p className="mt-2 text-[9px] text-caption">
-        Teams can change hands after the group stage — group points stay with the
-        drafter, knockout points go to the new owner. One scoring pick per bonus
-        category.
+        Knockout points are for a team&apos;s furthest stage and stack on the +5
+        (so an R16 team = 11). Group points stay with the drafter; knockout points
+        go to the new owner after a swap. One scoring pick per bonus category.
       </p>
     </section>
   );
