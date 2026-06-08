@@ -140,11 +140,13 @@ Exact games, format, and point values are **TBD** — captured here as a directi
 1. Golden Boot — Top Scorer *(free text)*
 2. Golden Ball — Best Player *(free text)*
 3. Golden Glove — Best Goalkeeper *(free text)*
-4. Best Young Player *(free text)*
+4. FIFA Young Player Award *(free text)* — renamed from "Best Young Player" 2026-06-08 (seed `0017`)
 5. Tournament Winner *(team pick)*
 6. Runner-Up — Losing Finalist *(team pick)* — added 2026-06-04
-7. Most Assists — Playmaker *(free text)* — added 2026-06-04
+7. Most Assists — Playmaker *(free text)* — added 2026-06-04 (pool extra, not an official FIFA award)
 8. Wooden Spoon — Worst Team *(team pick)* — added 2026-06-04
+
+> **Wooden Spoon resolution rule (2026-06-08):** the recipient is the team that finishes with the **fewest points** (league points: 3 win / 1 draw / 0 loss). If multiple teams tie on the lowest, the **managers vote** to choose which one is the wooden spoon; the admin then resolves the category to that team. (Goal difference is deliberately *not* used as the tiebreak — a manager vote keeps it social.)
 
 ### Results Data Source (validated 2026-06-02)
 

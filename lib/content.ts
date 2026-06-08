@@ -72,5 +72,5 @@ export const BONUS_AWARD_INFO: Record<string, string> = {
   most_assists: "Most assists across the tournament — a Gami-pool extra, not an official FIFA award.",
   tournament_winner: "The team that lifts the trophy.",
   runner_up: "The team that loses the final.",
-  wooden_spoon: "Your pick for the worst / most disappointing team of the tournament.",
+  wooden_spoon: "The team that finishes with the fewest points — managers vote to break any tie.",
 };
