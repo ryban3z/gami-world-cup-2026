@@ -20,8 +20,9 @@ export default function Scoring() {
         ))}
       </div>
       <p className="mt-2 text-[9px] text-caption">
-        Points are split between group &amp; knockout owners. One scoring pick per
-        bonus category.
+        Teams can change hands after the group stage — group points stay with the
+        drafter, knockout points go to the new owner. One scoring pick per bonus
+        category.
       </p>
     </section>
   );

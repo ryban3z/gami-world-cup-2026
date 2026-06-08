@@ -52,10 +52,11 @@ export const SCORING_ROWS: ScoringRow[] = [
 ];
 
 export const TIMELINE: TimelineItem[] = [
-  { label: "Registration", when: "open now" },
-  { label: "Draft opens", when: "tentative · Fri 5 Jun" },
+  { label: "Draft & rosters", when: "done ✓" },
   { label: "Picks lock", when: "10 Jun · eve of kickoff" },
   { label: "Group stage", when: "11–27 Jun" },
-  { label: "Wildcard + knockout swap", when: "late Jun" },
-  { label: "Knockouts → Final", when: "19 Jul" },
+  { label: "Knockout swap + wildcard", when: "after groups · ~28 Jun" },
+  { label: "Round of 32", when: "28 Jun – 3 Jul" },
+  { label: "R16 → quarters", when: "4–11 Jul" },
+  { label: "Semis & final", when: "14–19 Jul" },
 ];

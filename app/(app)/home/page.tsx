@@ -120,7 +120,9 @@ export default async function HomePage({
         </a>
       )}
 
-      {state && (phase === "draft" || revealed) && (
+      {/* The A–L group grid is the draft pick interface — only needed while the
+          draft is live. Post-draft, ownership is shown by manager in Rosters below. */}
+      {state && phase === "draft" && (
         <DraftBoard
           board={state.board}
           isMyTurn={state.is_my_turn}
