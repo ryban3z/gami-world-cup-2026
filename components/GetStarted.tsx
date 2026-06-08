@@ -23,23 +23,22 @@ export default function GetStarted({ registrationOpen }: { registrationOpen: boo
   const [open, setOpen] = useState(false);
   const [state, formAction] = useFormState(enterGate, {});
 
-  if (!registrationOpen) {
-    return (
-      <span
-        aria-disabled="true"
-        title="Registration isn't open yet"
-        className="mt-6 inline-block cursor-not-allowed select-none rounded-full border border-glow bg-panel px-8 py-3 text-sm font-bold uppercase tracking-wide text-caption opacity-60 md:mt-8 md:px-10 md:py-4 md:text-base"
-      >
-        Registration opens soon
-      </span>
-    );
-  }
-
+  // The gate flow (group password → /login) is the same whether or not
+  // registration is open — only the framing differs. When registration is
+  // closed we must still expose it so returning managers can log back in;
+  // hiding it entirely locked them out of the app.
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} className={`mt-6 inline-block md:mt-8 ${goldPill}`}>
-        Get started →
-      </button>
+      <div className="mt-6 md:mt-8">
+        <button onClick={() => setOpen(true)} className={`inline-block ${goldPill}`}>
+          {registrationOpen ? "Get started →" : "Log in →"}
+        </button>
+        {!registrationOpen && (
+          <p className="mt-2 text-[11px] text-caption">
+            Registration&apos;s closed — returning managers can still log in.
+          </p>
+        )}
+      </div>
     );
   }
 

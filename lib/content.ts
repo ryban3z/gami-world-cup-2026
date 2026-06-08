@@ -46,9 +46,9 @@ export const STEPS: Step[] = [
 
 export const SCORING_ROWS: ScoringRow[] = [
   { label: "Qualify from group", value: "+5" },
-  { label: "Reach R16 / QF / SF", value: "4 / 8 / 14" },
-  { label: "Final · Champion", value: "22 / 34" },
-  { label: "Each correct bonus pick", value: "+8" },
+  { label: "Reach R16 / QF / SF", value: "6 / 10 / 14" },
+  { label: "Final · Champion", value: "18 / 24" },
+  { label: "Each correct bonus pick", value: "+4" },
 ];
 
 export const TIMELINE: TimelineItem[] = [

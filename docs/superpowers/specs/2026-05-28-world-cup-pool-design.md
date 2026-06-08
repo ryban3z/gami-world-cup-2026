@@ -52,7 +52,7 @@ The draft engine lives in **Postgres `security definer` functions** called via R
 **Testing:** TDD a pure TS snake-order helper (`whose-turn-at-pick-N`); verify the SQL functions by simulating a full draft and asserting every player ends with 3 teams and the auto-reveal fires.
 
 ### Bonus Predictions (submitted upfront, before tournament starts)
-- Each player submits up to **2 picks per bonus category** before the tournament locks (the two must differ; partial entries allowed — blanks just score nothing)
+- Each player submits their picks before the tournament locks: up to **2 picks** for most categories (the two must differ; partial entries allowed — blanks just score nothing), but **1 pick** for the three single-answer team-pick categories (Tournament Winner, Runner-Up, Wooden Spoon — see migration `0015`)
 - Bonus categories (the 5 seeded in `bonus_categories`):
   - Golden Boot — Top Scorer
   - Golden Ball — Best Player
@@ -103,7 +103,7 @@ Admin-created, **time-limited** mini side-bets launched *during* the tournament 
 Exact games, format, and point values are **TBD** — captured here as a direction, not a committed design. Likely its own future plan, after the pre-tournament critical path and group-stage scoring are in.
 
 ### Scoring
-- Points-based (not winner-takes-all). All values below are a **draft starting point** — tunable via the scoring config tables before kickoff.
+- Points-based (not winner-takes-all). Values **rebalanced 2026-06-06** (`supabase/seed/0014_scoring_tune.sql`): team-picking is the centrepiece, bonus is complementary, and the knockout ladder is flattened so one lucky deep run no longer dominates. Tunable via the scoring config tables before kickoff. Rationale + full breakdown: `docs/superpowers/specs/2026-06-06-scoring-ingestion-design.md`.
 - Points are split by ownership phase so the blind swap stays fair: qualifying out of the group rewards the **group-stage owner**; the knockout run rewards the **knockout owner**.
 
 **Group-stage reward → group-stage owner (per team):**
@@ -115,13 +115,13 @@ Exact games, format, and point values are **TBD** — captured here as a directi
 | Furthest stage reached | Points |
 |---|---|
 | Eliminated in Round of 32 | 0 |
-| Reached Round of 16 | 4 |
-| Reached Quarter-final | 8 |
+| Reached Round of 16 | 6 |
+| Reached Quarter-final | 10 |
 | Reached Semi-final | 14 |
-| Reached Final (runner-up) | 22 |
-| Champion (additive bonus on top of Final) | +12 → 34 total |
+| Reached Final (runner-up) | 18 |
+| Champion (additive bonus on top of Final) | +6 → 24 total |
 
-**Bonus predictions:** 2 picks per category, **8 points** per correct pick (a player can score on at most one pick per category). Resolved manually by the admin (`bonus_categories.resolved_answer`).
+**Bonus predictions: 4 points** per correct pick (a player can score on at most one pick per category). Resolved manually by the admin (`bonus_categories.resolved_answer`). Most categories allow **2 guesses**; the three single-answer team-pick categories (Tournament Winner, Runner-Up, Wooden Spoon) allow **1 guess** — see migration `0015` and the note below.
 
 > **⚠️ Scoring-build note (free-text matching):** the 5 free-text categories store whatever the player typed, so scoring **cannot** do a naïve string equality against `resolved_answer` (case, accents, "Mbappé" vs "Mbappe", "K. Mbappé" vs "Kylian Mbappé" all differ). The scoring build must **normalise before comparing** (trim, casefold, strip accents/punctuation) and/or have the admin resolve each free-text category by **picking from the distinct submitted values** rather than typing a canonical answer — so the answer always matches at least the intended submissions. Team-pick categories are safe (dropdown values come from seeded `teams`). Decide the exact matching strategy when building scoring.
 
@@ -329,19 +329,21 @@ create table scoring_rules (
   stage  match_stage primary key,
   points int not null
 );
+-- Effective values shown (rebalanced 2026-06-06 by supabase/seed/0014_scoring_tune.sql).
+-- Migration 0001 originally seeded r16=4, qf=8, final=22; 0014 overwrites them.
 insert into scoring_rules (stage, points) values
   ('r32', 0),   -- eliminated in R32
-  ('r16', 4),
-  ('qf',  8),
+  ('r16', 6),
+  ('qf', 10),
   ('sf', 14),
-  ('final', 22);
+  ('final', 18);
 -- (third_place playoff carries no separate points in the draft scheme)
 
 create table scoring_config (
   id                int primary key default 1 check (id = 1),
   group_qualify_pts int not null default 5,   -- team reaches R32 → phase='group' owner
-  bonus_correct_pts int not null default 8,   -- each correct bonus pick
-  champion_pts      int not null default 12   -- additive bonus on top of 'final' → knockout owner
+  bonus_correct_pts int not null default 4,   -- each correct bonus pick (0014: was 8)
+  champion_pts      int not null default 6    -- additive bonus on top of 'final' → knockout owner (0014: was 12)
 );
 insert into scoring_config (id) values (1);
 
@@ -358,7 +360,7 @@ create table scores (
 
 ## Open Questions / TBD
 
-- [x] ~~Exact points breakdown per round~~ — draft values set (see Scoring); seeded into `scoring_rules` + `scoring_config`, tunable before kickoff
+- [x] ~~Exact points breakdown per round~~ — values set, then **rebalanced 2026-06-06** (`0014_scoring_tune.sql`; see Scoring) for a flatter ladder + complementary bonus; seeded into `scoring_rules` + `scoring_config`, tunable before kickoff
 - [x] ~~Bonus prediction categories~~ — **8 categories** live (5 free-text + 3 team-pick; expanded from 5 on 2026-06-04 — see Scoring); seeded into `bonus_categories`
 - [x] ~~Free-text bonus scoring — matching strategy~~ — **RESOLVED 2026-06-06:** normalise both sides (trim, casefold, strip accents/punctuation) before comparing; the admin resolves each category by typing or one-tapping a distinct submitted value. See `docs/superpowers/specs/2026-06-06-scoring-ingestion-design.md`.
 - [x] ~~Knockout re-allocation mechanic~~ — **Free-agent pickup** chosen (2026-06-03): one optional swap — drop one team + claim one unowned R32 team. Supersedes the earlier Option B blind swap; Option A (fresh snake draft) kept as fallback. **Allocation order under contention — RESOLVED 2026-06-06: reverse-standings priority** (worst-placed manager picks first).

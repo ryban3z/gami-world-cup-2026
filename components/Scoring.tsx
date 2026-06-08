@@ -20,8 +20,8 @@ export default function Scoring() {
         ))}
       </div>
       <p className="mt-2 text-[9px] text-caption">
-        Draft values — tunable before kickoff. Points are split between group &amp;
-        knockout owners.
+        Points are split between group &amp; knockout owners. One scoring pick per
+        bonus category.
       </p>
     </section>
   );
