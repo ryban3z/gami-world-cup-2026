@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { pressableLink } from "@/lib/ui";
 import PredictionForm from "@/components/predictions/PredictionForm";
 import RevealPicks from "@/components/predictions/RevealPicks";
 
@@ -45,6 +46,10 @@ export default async function PredictionsPage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-20 lg:max-w-3xl">
+      <a href="/home" className={`self-start text-sm text-caption underline ${pressableLink}`}>
+        ← Home
+      </a>
+
       <header>
         <h1 className="text-2xl font-bold">Bonus Predictions</h1>
         <p className="mt-1 text-sm text-bodytext">

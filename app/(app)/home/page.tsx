@@ -13,6 +13,7 @@ import MyPicks from "@/components/draft/MyPicks";
 import LeaderboardSummary from "@/components/leaderboard/LeaderboardSummary";
 import MatchStrip from "@/components/leaderboard/MatchStrip";
 import { buildLeaderboard, buildMatchStrip } from "@/lib/leaderboardView";
+import { bonusPicksComplete } from "@/lib/predictions";
 
 export const dynamic = "force-dynamic"; // always reflect live game state
 
@@ -35,6 +36,8 @@ export default async function HomePage({
     { data: scores },
     { data: teams },
     { data: matches },
+    { data: bonusCategories },
+    { data: myPicks },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", user.id).single(),
     supabase
@@ -54,14 +57,23 @@ export default async function HomePage({
       .select(
         "id, stage, group_letter, home_team_id, away_team_id, kickoff_at, home_score, away_score, winner_team_id, status",
       ),
+    supabase.from("bonus_categories").select("id, key").eq("is_active", true),
+    supabase
+      .from("bonus_predictions")
+      .select("category_id, pick_value")
+      .eq("user_id", user.id),
   ]);
 
   const state = (draft as DraftState | null) ?? null;
   const phase = state?.phase ?? "registration";
   const inRegistration = phase === "registration";
   const revealed = phase !== "registration" && phase !== "draft";
+  const predictionsOpen = cfg?.predictions_open ?? false;
   const predictionsStarted =
-    (cfg?.predictions_open ?? false) || cfg?.predictions_locked_at != null;
+    predictionsOpen || cfg?.predictions_locked_at != null;
+  // Bonus-pick progress for the home CTA: nudge harder while the window is open
+  // and the picks aren't all in; show a tick once they're complete.
+  const picksComplete = bonusPicksComplete(bonusCategories ?? [], myPicks ?? []);
   // Manager profiles unlock when bonus picks lock — until then roster cards
   // aren't clickable and the /managers/[id] route redirects home. Admins get an
   // early bypass so they can preview/proofread every profile before the reveal.
@@ -77,6 +89,19 @@ export default async function HomePage({
   const strip = revealed
     ? buildMatchStrip(matches ?? [], teams ?? [], { recent: 3, upcoming: 3 })
     : null;
+
+  // Bonus-predictions CTA: while the window is open, nudge hard if picks are
+  // incomplete (filled urgent button) or confirm with a tick if done. Once
+  // locked, picks can't change — fall back to a neutral "view everyone's" link.
+  const predUrgent = predictionsOpen && !predictionsLocked && !picksComplete;
+  const predLabel = predictionsLocked
+    ? "Bonus predictions →"
+    : picksComplete
+      ? "Bonus predictions ✓ all picks in"
+      : "Make your bonus picks — clock is ticking! ⏰";
+  const predClass = predUrgent
+    ? `inline-block rounded-full bg-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-navy hover:brightness-110 ${pressable}`
+    : `inline-block rounded-full border border-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-gold hover:bg-gold hover:text-navy ${pressable}`;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-28 lg:max-w-4xl">
@@ -130,11 +155,8 @@ export default async function HomePage({
       )}
 
       {predictionsStarted && (
-        <a
-          href="/predictions"
-          className={`inline-block rounded-full border border-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-gold hover:bg-gold hover:text-navy ${pressable}`}
-        >
-          Bonus predictions →
+        <a href="/predictions" className={predClass}>
+          {predLabel}
         </a>
       )}
 
