@@ -1,5 +1,6 @@
 import { savePredictions } from "@/app/(app)/predictions/actions";
 import SubmitButton from "@/components/SubmitButton";
+import { BONUS_AWARD_INFO } from "@/lib/content";
 
 // Categories whose picks are teams (rendered as dropdowns). All other
 // categories are free text. These are also single-pick: there's exactly one
@@ -40,7 +41,10 @@ export default function PredictionForm({
           const slots = isTeam ? [1] : [1, 2];
           return (
             <div key={c.id} className="rounded-xl border border-glow bg-panel p-4">
-              <h3 className="mb-2 text-sm font-bold text-gold">{c.name}</h3>
+              <h3 className="text-sm font-bold text-gold">{c.name}</h3>
+              {BONUS_AWARD_INFO[c.key] && (
+                <p className="mb-2 mt-0.5 text-xs text-caption">{BONUS_AWARD_INFO[c.key]}</p>
+              )}
               <div className="flex flex-col gap-2">
                 {slots.map((slot) => {
                   const name = `c_${c.id}_${slot}`;

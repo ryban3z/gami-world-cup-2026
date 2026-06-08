@@ -60,3 +60,17 @@ export const TIMELINE: TimelineItem[] = [
   { label: "R16 → quarters", when: "4–11 Jul" },
   { label: "Semis & final", when: "14–19 Jul" },
 ];
+
+// One-line "who/why" blurb per bonus award, keyed by bonus_categories.key.
+// Rendered under each award on the predictions page (form + reveal). Edit copy
+// here — names themselves live in the DB (bonus_categories.name).
+export const BONUS_AWARD_INFO: Record<string, string> = {
+  golden_boot: "Top goalscorer of the tournament (assists break ties).",
+  golden_ball: "Best overall player of the tournament, decided by a media vote.",
+  golden_glove: "Best goalkeeper of the tournament.",
+  young_player: "Best player aged 21 or under (born on or after 1 Jan 2005).",
+  most_assists: "Most assists across the tournament — a Gami-pool extra, not an official FIFA award.",
+  tournament_winner: "The team that lifts the trophy.",
+  runner_up: "The team that loses the final.",
+  wooden_spoon: "Your pick for the worst / most disappointing team of the tournament.",
+};

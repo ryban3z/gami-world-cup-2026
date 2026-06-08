@@ -1,3 +1,5 @@
+import { BONUS_AWARD_INFO } from "@/lib/content";
+
 interface Category {
   id: string;
   key: string;
@@ -34,6 +36,9 @@ export default function RevealPicks({
         return (
           <div key={c.id} className="rounded-xl border border-glow bg-panel p-4">
             <h3 className="text-sm font-bold text-gold">{c.name}</h3>
+            {BONUS_AWARD_INFO[c.key] && (
+              <p className="mt-0.5 text-xs text-caption">{BONUS_AWARD_INFO[c.key]}</p>
+            )}
             <ul className="mt-2 flex flex-col gap-1 text-sm">
               {[...byUser.entries()].map(([uid, vals]) => (
                 <li key={uid} className="flex justify-between gap-2">
