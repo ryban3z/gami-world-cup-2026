@@ -38,7 +38,7 @@ where display_name = 'Frimpong';
 
 update profiles set summary =
 'A brooding, moody artist forever circling the globe in search of his next adventure. London is the current base — though with France his headline pick, he''d be better off decamping to Paris. Colombia and Morocco round out a roster as restless and well-travelled as he is.'
-where display_name = 'tallon d''or';
+where display_name = 'tallon d’or';
 
 update profiles set summary =
 'Stumbled into the pool more or less by accident — a devoted trainspotter, not a football man. He''ll quietly will England on out of pure national affection, but his actual roster — Germany, USA and Canada — hints at a very different, possibly timetable-based, drafting strategy.'

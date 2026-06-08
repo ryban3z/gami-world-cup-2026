@@ -16,5 +16,5 @@ update profiles set avatar_url = '/managers/mzhong23.png'          where display
 update profiles set avatar_url = '/managers/ho1328.png'            where display_name = 'Ho1328';
 update profiles set avatar_url = '/managers/w.png'                where display_name = 'W';
 update profiles set avatar_url = '/managers/frimpong.png'          where display_name = 'Frimpong';
-update profiles set avatar_url = '/managers/tallon-dor.png'        where display_name = 'tallon d''or';
+update profiles set avatar_url = '/managers/tallon-dor.png'        where display_name = 'tallon d’or';
 update profiles set avatar_url = '/managers/hst.png'              where display_name = 'HST';
