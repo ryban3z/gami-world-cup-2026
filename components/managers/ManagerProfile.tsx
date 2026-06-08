@@ -11,14 +11,36 @@ export default function ManagerProfile({ view }: { view: ManagerProfileView }) {
       </a>
 
       <header>
-        <h1 className="text-2xl font-bold">
-          {view.displayName}
-          {view.isSelf && (
-            <span className="ml-2 text-sm font-normal text-caption">(you)</span>
+        <div className="flex items-center gap-4">
+          {view.avatarUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={view.avatarUrl}
+              alt={view.displayName}
+              className="h-16 w-16 shrink-0 rounded-full border border-glow object-cover"
+            />
+          ) : (
+            <span
+              aria-hidden
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-glow bg-panel text-lg font-bold text-gold"
+            >
+              {view.initials}
+            </span>
           )}
-        </h1>
+          <h1 className="text-2xl font-bold">
+            {view.displayName}
+            {view.isSelf && (
+              <span className="ml-2 text-sm font-normal text-caption">(you)</span>
+            )}
+          </h1>
+        </div>
         {view.summary && (
-          <p className="mt-2 whitespace-pre-line text-bodytext">{view.summary}</p>
+          <p className="mt-3 whitespace-pre-line text-bodytext">{view.summary}</p>
+        )}
+        {view.chickenFlavour && (
+          <p className="mt-3 rounded-lg border border-glow bg-panel px-3 py-2 text-sm text-bodytext">
+            <span className="font-semibold text-gold">🍗 Chicken order:</span> {view.chickenFlavour}
+          </p>
         )}
       </header>
 

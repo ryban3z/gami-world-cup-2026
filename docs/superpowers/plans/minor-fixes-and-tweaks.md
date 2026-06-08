@@ -7,7 +7,7 @@ self-contained note with enough detail to act on. Check off when done.
 
 ## Open
 
-### [ ] Pull "Recent results" + "Next up" onto the home page
+### [x] Pull "Recent results" + "Next up" onto the home page
 
 **Where:** `app/(app)/home/page.tsx`. Reuse the already-built `components/leaderboard/MatchStrip.tsx`
 + `buildMatchStrip` from `lib/leaderboardView.ts` (currently only on `/leaderboard`).

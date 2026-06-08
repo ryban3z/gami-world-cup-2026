@@ -28,6 +28,8 @@ interface PredictionLite {
 export interface ManagerProfileInput {
   displayName: string;
   summary: string | null;
+  chickenFlavour: string | null;
+  avatarUrl: string | null;
   isSelf: boolean;
   targetUserId: string;
   rosters: RosterLite[] | null; // from draft_state(); null until the reveal
@@ -50,6 +52,9 @@ export interface CategoryPicks {
 export interface ManagerProfileView {
   displayName: string;
   summary: string | null;
+  chickenFlavour: string | null;
+  avatarUrl: string | null;
+  initials: string;
   isSelf: boolean;
   rosterVisible: boolean;
   teams: ProfileTeam[];
@@ -59,12 +64,24 @@ export interface ManagerProfileView {
 
 export function buildManagerProfileView(input: ManagerProfileInput): ManagerProfileView {
   const {
-    displayName, summary, isSelf, targetUserId,
+    displayName, summary, chickenFlavour, avatarUrl, isSelf, targetUserId,
     rosters, board, predictionsLockedAt, categories, predictions,
   } = input;
 
   const trimmed = summary?.trim();
   const cleanSummary = trimmed ? trimmed : null;
+
+  const cleanChicken = chickenFlavour?.trim() ? chickenFlavour.trim() : null;
+
+  const cleanAvatar = avatarUrl?.trim() ? avatarUrl.trim() : null;
+  // Up to two initials for the no-photo fallback: first letters of the first
+  // two whitespace-separated words, else the first two letters of a single word.
+  const words = displayName.trim().split(/\s+/).filter(Boolean);
+  const initials = (
+    words.length > 1
+      ? words[0][0] + words[1][0]
+      : (words[0] ?? "?").slice(0, 2)
+  ).toUpperCase();
 
   // Roster is revealed once draft_state() returns a (non-null) rosters array.
   const rosterVisible = rosters !== null;
@@ -94,6 +111,9 @@ export function buildManagerProfileView(input: ManagerProfileInput): ManagerProf
   return {
     displayName,
     summary: cleanSummary,
+    chickenFlavour: cleanChicken,
+    avatarUrl: cleanAvatar,
+    initials,
     isSelf,
     rosterVisible,
     teams,

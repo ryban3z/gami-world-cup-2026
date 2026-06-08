@@ -17,6 +17,8 @@ function base(overrides: Partial<ManagerProfileInput> = {}): ManagerProfileInput
   return {
     displayName: "W",
     summary: "A bold strategist.",
+    chickenFlavour: "Extra crispy, extra hot sauce.",
+    avatarUrl: "/managers/w.jpg",
     isSelf: false,
     targetUserId: "u1",
     rosters: [{ user_id: "u1", team_ids: ["t2", "t1"] }],
@@ -43,6 +45,37 @@ describe("buildManagerProfileView — summary", () => {
     expect(buildManagerProfileView(base({ summary: "   " })).summary).toBeNull();
     expect(buildManagerProfileView(base({ summary: "" })).summary).toBeNull();
     expect(buildManagerProfileView(base({ summary: null })).summary).toBeNull();
+  });
+});
+
+describe("buildManagerProfileView — chicken flavour", () => {
+  it("passes through a non-empty chicken flavour", () => {
+    expect(buildManagerProfileView(base()).chickenFlavour).toBe("Extra crispy, extra hot sauce.");
+  });
+  it("trims and maps empty/whitespace/null chicken flavour to null", () => {
+    expect(buildManagerProfileView(base({ chickenFlavour: "  Original  " })).chickenFlavour).toBe("Original");
+    expect(buildManagerProfileView(base({ chickenFlavour: "   " })).chickenFlavour).toBeNull();
+    expect(buildManagerProfileView(base({ chickenFlavour: null })).chickenFlavour).toBeNull();
+  });
+});
+
+describe("buildManagerProfileView — avatar & initials", () => {
+  it("passes through a non-empty avatar path", () => {
+    expect(buildManagerProfileView(base()).avatarUrl).toBe("/managers/w.jpg");
+  });
+  it("trims and maps empty/whitespace/null avatar to null", () => {
+    expect(buildManagerProfileView(base({ avatarUrl: "  /a.jpg  " })).avatarUrl).toBe("/a.jpg");
+    expect(buildManagerProfileView(base({ avatarUrl: "   " })).avatarUrl).toBeNull();
+    expect(buildManagerProfileView(base({ avatarUrl: null })).avatarUrl).toBeNull();
+  });
+  it("derives one initial from a single-word name", () => {
+    expect(buildManagerProfileView(base({ displayName: "W" })).initials).toBe("W");
+  });
+  it("derives two initials from a single multi-letter word", () => {
+    expect(buildManagerProfileView(base({ displayName: "Frimpong" })).initials).toBe("FR");
+  });
+  it("derives initials from the first two words of a multi-word name", () => {
+    expect(buildManagerProfileView(base({ displayName: "tallon d’or" })).initials).toBe("TD");
   });
 });
 

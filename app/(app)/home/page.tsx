@@ -11,7 +11,8 @@ import TurnBanner from "@/components/draft/TurnBanner";
 import DraftOrderRail from "@/components/draft/DraftOrderRail";
 import MyPicks from "@/components/draft/MyPicks";
 import LeaderboardSummary from "@/components/leaderboard/LeaderboardSummary";
-import { buildLeaderboard } from "@/lib/leaderboardView";
+import MatchStrip from "@/components/leaderboard/MatchStrip";
+import { buildLeaderboard, buildMatchStrip } from "@/lib/leaderboardView";
 
 export const dynamic = "force-dynamic"; // always reflect live game state
 
@@ -33,6 +34,7 @@ export default async function HomePage({
     { data: draft },
     { data: scores },
     { data: teams },
+    { data: matches },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", user.id).single(),
     supabase
@@ -47,6 +49,11 @@ export default async function HomePage({
     supabase.rpc("draft_state"),
     supabase.from("scores").select("user_id, total_points, breakdown"),
     supabase.from("teams").select("id, name, flag_url"),
+    supabase
+      .from("matches")
+      .select(
+        "id, stage, group_letter, home_team_id, away_team_id, kickoff_at, home_score, away_score, winner_team_id, status",
+      ),
   ]);
 
   const state = (draft as DraftState | null) ?? null;
@@ -55,10 +62,21 @@ export default async function HomePage({
   const revealed = phase !== "registration" && phase !== "draft";
   const predictionsStarted =
     (cfg?.predictions_open ?? false) || cfg?.predictions_locked_at != null;
+  // Manager profiles unlock when bonus picks lock — until then roster cards
+  // aren't clickable and the /managers/[id] route redirects home. Admins get an
+  // early bypass so they can preview/proofread every profile before the reveal.
+  const isAdmin = state?.is_admin ?? false;
+  const predictionsLocked = cfg?.predictions_locked_at != null;
+  const profilesUnlocked = predictionsLocked || isAdmin;
   const list = players ?? [];
   const summaryRows = revealed
     ? buildLeaderboard(scores ?? [], list, teams ?? [], user.id)
     : [];
+  // Compact recent/upcoming match strip — live phases only. Small counts keep
+  // home tight; the full strip stays on /leaderboard.
+  const strip = revealed
+    ? buildMatchStrip(matches ?? [], teams ?? [], { recent: 3, upcoming: 3 })
+    : null;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-28 lg:max-w-4xl">
@@ -135,9 +153,22 @@ export default async function HomePage({
       {revealed && state?.rosters && (
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-caption">Rosters</h2>
-          <Rosters rosters={state.rosters} board={state.board} />
+          {!predictionsLocked && (
+            <p className="text-xs text-caption">
+              {isAdmin
+                ? "Admin preview — profiles are clickable for you, but stay sealed for everyone else until bonus picks lock."
+                : "Manager profiles unlock when bonus picks lock at kickoff."}
+            </p>
+          )}
+          <Rosters
+            rosters={state.rosters}
+            board={state.board}
+            profilesUnlocked={profilesUnlocked}
+          />
         </section>
       )}
+
+      {revealed && strip && <MatchStrip recent={strip.recent} upcoming={strip.upcoming} />}
 
       {/* Who's in — most useful before the draft kicks off. */}
       {inRegistration && (

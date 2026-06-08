@@ -12,6 +12,17 @@ short hand-written "funny summary" blurb. Points/standings are intentionally **o
 for v1 because the scoring subsystem does not exist yet; a profile gains a points section
 later, when scoring lands.
 
+> **Visibility update (2026-06-08):** the **entire profile page is sealed until bonus picks
+> lock** (`game_config.predictions_locked_at` is set, ~Jun 10) — not just the predictions
+> section. The roster cards on `/home` still render post-reveal (they show each manager's
+> teams) but are **not clickable** until the lock, and the `/managers/[id]` route itself
+> redirects to `/home` while `predictions_locked_at is null` (guarding against typed URLs).
+> Locking predictions opens every profile — blurb, photo, Gami order, roster, and picks — at
+> once, for a single clean reveal moment. This supersedes the original "open at draft reveal"
+> framing below. Also added since v1: per-manager **avatar photo** (`profiles.avatar_url`,
+> committed under `public/managers/`) and a **"Gami order"** running-gag line
+> (`profiles.chicken_flavour`); both are nullable and seed-driven like `summary`.
+
 > **Terminology:** "managers" are the human players in the pool (the ~9 registered friends),
 > each managing a roster of national teams. The route is `/managers/[id]`, where `[id]` is a
 > `profiles.id`. This is deliberately **not** about football players — actual footballers
