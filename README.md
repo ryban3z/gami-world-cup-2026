@@ -48,19 +48,19 @@ The landing page runs with no backend. The core app (gate + auth + data) needs a
    8. `supabase/migrations/0007_registered_count.sql` — exposes the registered-player count to the public landing page.
    9. `supabase/migrations/0008_admin_registration.sql` — admin-guarded `set_registration_open` RPC (powers the /admin registration toggle).
    10. `supabase/seed/0009_more_bonus_categories.sql` — three extra bonus categories (Runner-Up, Most Assists, Wooden Spoon). Idempotent; apply before the prediction window opens.
-   11. `supabase/migrations/0010_manager_summary.sql` — adds `profiles.summary` (the per-manager profile blurb shown on `/managers/[id]`).
-   12. `supabase/seed/0011_seed_summaries.sql` — the manager summary blurbs (idempotent `update`s keyed by `display_name`). Apply any time after the draft.
-   13. `supabase/seed/0012_seed_matches.sql` — maps `teams.external_id` + seeds the 104 fixtures (results ingestion).
-   14. `supabase/migrations/0013_admin_results.sql` — admin override/resolve RPCs + `last_results_sync_at`.
-   15. `supabase/seed/0014_scoring_tune.sql` — rebalanced scoring values (apply before kickoff).
-   16. `supabase/migrations/0015_single_pick_team_categories.sql` — makes Tournament Winner / Runner-Up / Wooden Spoon single-pick (one slot, not two) and clears any stale slot-2 picks on those categories.
-   17. `supabase/migrations/0016_dashboard_rls.sql` — read policies on `scores` / `team_standings` / `matches` so the live dashboard (`/leaderboard` + the home summary) can read them.
-   18. `supabase/seed/0017_fix_category_names.sql` — renames the `young_player` bonus category to its official title, "FIFA Young Player Award" (apply before the predictions lock).
-   19. `supabase/migrations/0018_avatar_url.sql` — adds `profiles.avatar_url` (manager photo path under `public/managers/`, shown on `/managers/[id]`).
-   20. `supabase/seed/0019_manager_avatars.sql` — maps each manager to their committed photo (idempotent `update`s keyed by `display_name`). Apply after the photos are committed under `public/managers/`.
-   21. `supabase/seed/0020_manager_summaries.sql` — humorous per-manager blurbs (`profiles.summary`, idempotent `update`s keyed by `display_name`).
-   22. `supabase/migrations/0023_chicken_flavour.sql` — adds `profiles.chicken_flavour` (the "fried chicken order" running gag shown on the profile).
-   23. `supabase/seed/0024_chicken_flavours.sql` — the per-manager chicken orders (idempotent `update`s keyed by `display_name`).
+   11. `supabase/migrations/0010_manager_summary.sql` — adds `profiles.summary` (the per-manager profile blurb shown on `/managers/[id]`). (The blurbs themselves are seeded by `0020` below; there is no `0011` file.)
+   12. `supabase/seed/0012_seed_matches.sql` — maps `teams.external_id` + seeds the 104 fixtures (results ingestion).
+   13. `supabase/migrations/0013_admin_results.sql` — admin override/resolve RPCs + `last_results_sync_at`.
+   14. `supabase/seed/0014_scoring_tune.sql` — rebalanced scoring values (apply before kickoff).
+   15. `supabase/migrations/0015_single_pick_team_categories.sql` — makes Tournament Winner / Runner-Up / Wooden Spoon single-pick (one slot, not two) and clears any stale slot-2 picks on those categories.
+   16. `supabase/migrations/0016_dashboard_rls.sql` — read policies on `scores` / `team_standings` / `matches` so the live dashboard (`/leaderboard` + the home summary) can read them.
+   17. `supabase/seed/0017_fix_category_names.sql` — renames the `young_player` bonus category to its official title, "FIFA Young Player Award" (apply before the predictions lock).
+   18. `supabase/migrations/0018_avatar_url.sql` — adds `profiles.avatar_url` (manager photo path under `public/managers/`, shown on `/managers/[id]`).
+   19. `supabase/seed/0019_manager_avatars.sql` — maps each manager to their committed photo (idempotent `update`s keyed by `display_name`). Apply after the photos are committed under `public/managers/`.
+   20. `supabase/seed/0020_manager_summaries.sql` — humorous per-manager blurbs (`profiles.summary`, idempotent `update`s keyed by `display_name`).
+   21. `supabase/migrations/0023_chicken_flavour.sql` — adds `profiles.chicken_flavour` (the "fried chicken order" running gag shown on the profile).
+   22. `supabase/seed/0024_chicken_flavours.sql` — the per-manager chicken orders (idempotent `update`s keyed by `display_name`).
+   23. `supabase/migrations/0025_override_winner.sql` — penalties-aware match override (replaces the `0013` RPC; the override can now record a shootout winner on a level knockout result). **Apply with (or before) deploying the matching app code** — the admin override form passes the new argument.
 4. **Disable email confirmation:** Supabase → Authentication → Sign In / Providers → Email → turn **off "Confirm email"** (so friends can register and log in immediately without an SMTP setup).
 5. **Make yourself admin** (after registering): in the SQL Editor, run
    `update profiles set is_admin = true where display_name = '<your name>';`

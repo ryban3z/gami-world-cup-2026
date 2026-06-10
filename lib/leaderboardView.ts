@@ -170,7 +170,9 @@ export function buildMatchStrip(
   const recentN = opts.recent ?? 5;
   const upcomingN = opts.upcoming ?? 5;
   const teamById = new Map(teams.map((t) => [t.id, t]));
-  const ms = (s: string | null) => (s ? new Date(s).getTime() : 0);
+  // Null kickoffs (unscheduled knockout fixtures) sort to the back of both lists.
+  const ms = (s: string | null, missing: number) =>
+    s ? new Date(s).getTime() : missing;
 
   const toItem = (m: MatchLite): MatchStripItem => {
     const home = m.home_team_id ? teamById.get(m.home_team_id) : undefined;
@@ -193,13 +195,13 @@ export function buildMatchStrip(
 
   const recent = matches
     .filter((m) => m.status === "final")
-    .sort((a, b) => ms(b.kickoff_at) - ms(a.kickoff_at))
+    .sort((a, b) => ms(b.kickoff_at, -Infinity) - ms(a.kickoff_at, -Infinity))
     .slice(0, recentN)
     .map(toItem);
 
   const upcoming = matches
     .filter((m) => m.status !== "final")
-    .sort((a, b) => ms(a.kickoff_at) - ms(b.kickoff_at))
+    .sort((a, b) => ms(a.kickoff_at, Infinity) - ms(b.kickoff_at, Infinity))
     .slice(0, upcomingN)
     .map(toItem);
 

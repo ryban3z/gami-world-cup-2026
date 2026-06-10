@@ -2,14 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project status: full pre-tournament app built; scoring/ingestion is next
+## Project status: app built through the live dashboard; knockout re-allocation is next
 
-The **landing page** and the entire **pre-tournament app** are built and deployed (Vercel auto-deploys from `main`). Done:
+The **landing page**, the entire **pre-tournament app**, and the **in-tournament scoring stack** are built and deployed (Vercel auto-deploys from `main`). Done:
 - Supabase schema + RLS, seeded teams + **8 bonus categories**, shared-password gate, and **display-name + password auth** (synthetic email, no real email — `lib/identity.ts`) (Plan 1 — `docs/superpowers/plans/2026-06-02-pre-tournament-foundation.md`).
 - The **snake-draft engine + draft-night dashboard** (Plan 2) and **bonus predictions + kickoff lock** (Plan 3).
-- An **`/admin` control panel** (`app/(app)/admin/`) that drives every phase transition — open/close registration, start draft, auto-pick, lock predictions — each behind a two-step confirm. Admins reach it via a "⚙ Admin" link on `/home`; non-admins are redirected away.
+- An **`/admin` control panel** (`app/(app)/admin/`) that drives every phase transition — open/close registration, start draft, auto-pick, lock predictions — each behind a two-step confirm. Admins reach it via a "⚙ Admin" link on `/home`; non-admins are redirected away. It also hosts the results tools: manual refresh (30s cooldown), per-match override (penalties-aware, `0025`), and bonus-category resolution.
+- **Scoring + results ingestion** (`docs/superpowers/plans/2026-06-06-scoring-ingestion.md`): pure engine in `lib/scoring.ts`, ingest/recalc pipeline in `lib/pipeline.ts` (service-role client), football-data.org mapper in `lib/footballData.ts`, daily Vercel Cron → `/api/cron/ingest` (`CRON_SECRET` bearer auth; the route is exempted from the gate in `middleware.ts`).
+- The **live dashboard** (`docs/superpowers/plans/2026-06-07-live-dashboard.md`): `/leaderboard` + home summary + match strip (`lib/leaderboardView.ts`), and gated **manager profile pages** (`/managers/[id]`).
 
-**Still to build: scoring + results ingestion** (the next major subsystem), then the **live-tournament dashboard** that depends on it, then the **knockout re-allocation**. The go-live runbook is in `README.md`. See `docs/superpowers/specs/2026-05-28-world-cup-pool-design.md` and the `docs/superpowers/plans/` files.
+**Still to build: the knockout re-allocation** (free-agent pickup via blind ranked preferences — see the section below) and, optionally, the in-tournament bonus mini-games sketched in the spec. The go-live runbook is in `README.md`. See `docs/superpowers/specs/2026-05-28-world-cup-pool-design.md` and the `docs/superpowers/plans/` files.
 
 Setup for the core app lives in `README.md` (env vars, applying migrations, seeding teams). The data model is single-tenant by design — a second group is a separate deploy (branding + site password come from env).
 
@@ -17,7 +19,7 @@ Commands:
 - `npm run dev` — local dev server (http://localhost:3000)
 - `npm run build` — production build
 - `npm run lint` — Next.js ESLint
-- `npm test` — Vitest unit tests (countdown, config, gate, identity, draft + draftView, predictions, adminView). Note: `npm run lint` can hang on an interactive ESLint setup; prefer `npx tsc --noEmit` + `npm run build` to verify.
+- `npm test` — Vitest unit tests (countdown, config, gate, identity, draft + draftView, predictions, adminView, scoring, footballData, leaderboardView, managerProfileView). Note: `npm run lint` can hang on an interactive ESLint setup; prefer `npx tsc --noEmit` + `npm run build` to verify.
 - Deploy: Vercel (import the GitHub repo, or `npx vercel --prod`)
 
 The canonical, authoritative design lives in `docs/superpowers/specs/2026-05-28-world-cup-pool-design.md`. **Read it before doing any work** — it contains the full feature set, the finalized Postgres data model (as DDL), scoring values, and the list of open questions. The landing page has its own spec + plan under `docs/superpowers/specs/` and `docs/superpowers/plans/`. When a design decision changes, update the relevant spec; treat it as the source of truth over any summary here.
@@ -30,7 +32,7 @@ A private, mobile-friendly web app for ~8 friends to run a World Cup 2026 bettin
 
 - **Next.js 14 (App Router) + TypeScript**, deployed on **Vercel**
 - **Supabase** — Postgres (all persistent state) + Auth (sessions). Auth sits behind a single shared site-password gate; there are no per-user invite codes.
-- **Vercel Cron** → a Next.js API route that ingests results and triggers idempotent score recalculation (**not yet built**). Results source resolved 2026-06-02: seed teams/matches from **openfootball/worldcup.json**, final scores from **football-data.org** (free tier), with admin manual override (`matches.is_manual_override`) as the backstop. *(API-Football's free tier was rejected — it returns no WC 2026 data.)*
+- **Vercel Cron** → a Next.js API route (`/api/cron/ingest`) that ingests results and triggers idempotent score recalculation. Results source resolved 2026-06-02: seed teams/matches from **openfootball/worldcup.json**, final scores from **football-data.org** (free tier), with admin manual override (`matches.is_manual_override`) as the backstop. *(API-Football's free tier was rejected — it returns no WC 2026 data.)*
 
 ## Architecture concepts that span multiple parts of the system
 

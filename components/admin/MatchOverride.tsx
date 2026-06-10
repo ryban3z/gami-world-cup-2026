@@ -4,9 +4,15 @@ import { overrideMatch } from "@/app/(app)/admin/actions";
 export interface OverrideMatch {
   id: string;
   label: string; // e.g. "GROUP A — Mexico vs South Africa"
+  stage: string;
+  home_id: string | null;
+  home_name: string;
+  away_id: string | null;
+  away_name: string;
   home_score: number | null;
   away_score: number | null;
   status: string;
+  winner_team_id: string | null;
   is_manual_override: boolean;
 }
 
@@ -33,6 +39,19 @@ export default function MatchOverride({ matches }: { matches: OverrideMatch[] })
                 <option value="live">live</option>
                 <option value="final">final</option>
               </select>
+              {/* Knockout matches can end level — penalties decide. Leave on
+                  "auto" for a decisive score; pick the shootout winner on a draw.
+                  A stored winner is preselected only when the score is level (a
+                  pens result); on a decisive score "auto" stays in charge. */}
+              {m.stage !== "group" && (
+                <select name="winner_team_id"
+                  defaultValue={m.home_score !== null && m.home_score === m.away_score ? m.winner_team_id ?? "" : ""}
+                  className="rounded bg-navy p-1 text-white" aria-label="winner (penalties)">
+                  <option value="">winner: auto</option>
+                  {m.home_id && <option value={m.home_id}>{m.home_name} (pens)</option>}
+                  {m.away_id && <option value={m.away_id}>{m.away_name} (pens)</option>}
+                </select>
+              )}
               <button className={`rounded-full border border-gold px-3 py-1 text-xs font-bold text-gold ${pressable}`}>
                 Save
               </button>

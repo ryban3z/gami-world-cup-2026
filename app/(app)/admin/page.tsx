@@ -42,7 +42,7 @@ export default async function AdminPage({
       supabase.rpc("draft_state"),
       supabase
         .from("matches")
-        .select("id, stage, group_letter, status, home_score, away_score, is_manual_override, home:home_team_id(name), away:away_team_id(name)")
+        .select("id, stage, group_letter, status, home_score, away_score, winner_team_id, is_manual_override, home:home_team_id(id, name), away:away_team_id(id, name)")
         .order("kickoff_at"),
       supabase.from("bonus_categories").select("id, name, resolved_answer").eq("is_active", true).order("name"),
       supabase.from("bonus_predictions").select("category_id, pick_value").eq("is_active", true),
@@ -52,7 +52,11 @@ export default async function AdminPage({
   const overrideMatches: OverrideMatch[] = (matchRows ?? []).map((m: any) => ({
     id: m.id,
     label: `${m.stage.toUpperCase()}${m.group_letter ? " " + m.group_letter : ""} — ${m.home?.name ?? "TBD"} vs ${m.away?.name ?? "TBD"}`,
+    stage: m.stage,
+    home_id: m.home?.id ?? null, home_name: m.home?.name ?? "TBD",
+    away_id: m.away?.id ?? null, away_name: m.away?.name ?? "TBD",
     home_score: m.home_score, away_score: m.away_score, status: m.status,
+    winner_team_id: m.winner_team_id ?? null,
     is_manual_override: m.is_manual_override,
   }));
   const suggestionsByCat = new Map<string, Set<string>>();

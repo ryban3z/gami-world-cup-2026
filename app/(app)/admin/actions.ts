@@ -81,11 +81,14 @@ export async function refreshResults() {
 export async function overrideMatch(formData: FormData) {
   await requireAdmin();
   const supabase = createClient();
+  // "" = auto (derive winner from the scores); a team id = penalties winner.
+  const winner = String(formData.get("winner_team_id") ?? "");
   const { error } = await supabase.rpc("admin_override_match", {
     p_match_id: String(formData.get("match_id")),
     p_home_score: Number(formData.get("home_score")),
     p_away_score: Number(formData.get("away_score")),
     p_status: String(formData.get("status")),
+    p_winner_team_id: winner || null,
   });
   if (error) back(error.message);
   try { await runRecalc(); } catch (e) { back(e instanceof Error ? e.message : String(e)); }

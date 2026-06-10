@@ -26,17 +26,31 @@ describe("mapApiMatch", () => {
     });
   });
   it("maps a finished match with scores + winner", () => {
-    const m = mapApiMatch(finishedMatch);
+    const m = mapApiMatch(finishedMatch)!;
     expect(m.status).toBe("final");
     expect(m.homeScore).toBe(1);
     expect(m.awayScore).toBe(2);
     expect(m.winner).toBe("AWAY_TEAM");
   });
   it("maps a knockout fixture with null teams", () => {
-    const m = mapApiMatch(knockoutTbd);
+    const m = mapApiMatch(knockoutTbd)!;
     expect(m.stage).toBe("r32");
     expect(m.groupLetter).toBeNull();
     expect(m.homeExternalId).toBeNull();
     expect(m.awayExternalId).toBeNull();
+  });
+  it("treats extra time / penalties / LIVE as live, AWARDED as final", () => {
+    const at = (status: string) => mapApiMatch({ ...finishedMatch, status })!.status;
+    expect(at("EXTRA_TIME")).toBe("live");
+    expect(at("PENALTY_SHOOTOUT")).toBe("live");
+    expect(at("LIVE")).toBe("live");
+    expect(at("AWARDED")).toBe("final");
+    // No result to score yet for these — fall back to scheduled.
+    expect(at("POSTPONED")).toBe("scheduled");
+    expect(at("SUSPENDED")).toBe("scheduled");
+    expect(at("CANCELLED")).toBe("scheduled");
+  });
+  it("returns null for an unknown stage instead of throwing", () => {
+    expect(mapApiMatch({ ...knockoutTbd, stage: "PLAY_OFFS" })).toBeNull();
   });
 });

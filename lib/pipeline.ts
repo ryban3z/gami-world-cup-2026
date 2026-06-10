@@ -1,6 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
-import { fetchWcMatches, mapApiMatch } from "@/lib/footballData";
+import { fetchWcMatches, mapApiMatch, type MappedMatch } from "@/lib/footballData";
 import {
   deriveStandings, computeScores,
   type MatchRow, type OwnershipRow, type CategoryRow, type PredictionRow,
@@ -53,7 +53,15 @@ export async function runIngest() {
   const db = createServiceClient();
 
   const apiMatches = await fetchWcMatches(token);
-  const mapped = apiMatches.map(mapApiMatch);
+  // Skip fixtures in stages we don't recognise (and surface them in the cron
+  // log / admin result) rather than letting one odd fixture abort the ingest.
+  const mapped: MappedMatch[] = [];
+  const skippedStages = new Set<string>();
+  for (const am of apiMatches) {
+    const m = mapApiMatch(am);
+    if (m) mapped.push(m);
+    else skippedStages.add(am.stage);
+  }
 
   const [{ data: teams }, { data: existing }] = await Promise.all([
     db.from("teams").select("id, external_id"),
@@ -85,5 +93,5 @@ export async function runIngest() {
 
   const recalc = await runRecalc(db);
   await db.from("game_config").update({ last_results_sync_at: now }).eq("id", 1);
-  return { matches: mapped.length, ...recalc };
+  return { matches: mapped.length, skippedStages: [...skippedStages], ...recalc };
 }

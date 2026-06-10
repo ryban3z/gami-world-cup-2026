@@ -178,6 +178,17 @@ describe("buildMatchStrip", () => {
     expect(upcoming.map((m) => m.id)).toEqual(["d"]);
   });
 
+  it("sorts null kickoffs (unscheduled fixtures) to the back of upcoming", () => {
+    const { upcoming } = buildMatchStrip(
+      [
+        match("tbd", "scheduled", null as any, { stage: "r16", group_letter: null }),
+        match("soon", "scheduled", "2026-06-13T18:00:00Z"),
+      ],
+      teams,
+    );
+    expect(upcoming.map((m) => m.id)).toEqual(["soon", "tbd"]);
+  });
+
   it("shows TBD for unresolved knockout teams and uses the stage label", () => {
     const { upcoming } = buildMatchStrip(
       [match("k", "scheduled", "2026-07-01T00:00:00Z", { stage: "r16", group_letter: null, home_team_id: null, away_team_id: "t2" })],

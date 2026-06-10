@@ -9,10 +9,15 @@ const STAGE_MAP: Record<string, MatchStage> = {
   GROUP_STAGE: "group", LAST_32: "r32", LAST_16: "r16",
   QUARTER_FINALS: "qf", SEMI_FINALS: "sf", THIRD_PLACE: "third_place", FINAL: "final",
 };
+// Full football-data v4 status enum. EXTRA_TIME / PENALTY_SHOOTOUT are live
+// states (a level knockout match must not regress to "scheduled" mid-game) and
+// AWARDED is a finished result. SUSPENDED / POSTPONED / CANCELLED fall through
+// to the "scheduled" default below — no result to score yet.
 const STATUS_MAP: Record<string, MatchStatus> = {
   SCHEDULED: "scheduled", TIMED: "scheduled",
-  IN_PLAY: "live", PAUSED: "live",
-  FINISHED: "final",
+  IN_PLAY: "live", PAUSED: "live", LIVE: "live",
+  EXTRA_TIME: "live", PENALTY_SHOOTOUT: "live",
+  FINISHED: "final", AWARDED: "final",
 };
 
 export interface MappedMatch {
@@ -42,9 +47,12 @@ interface ApiMatch {
 
 const ext = (id: number | null): string | null => (id == null ? null : String(id));
 
-export function mapApiMatch(m: ApiMatch): MappedMatch {
+// Returns null for a stage we don't recognise (football-data has never run a
+// 48-team World Cup, so LAST_32 is an assumption) — the caller skips and
+// reports it instead of one odd fixture aborting the whole ingest.
+export function mapApiMatch(m: ApiMatch): MappedMatch | null {
   const stage = STAGE_MAP[m.stage];
-  if (!stage) throw new Error(`unknown stage: ${m.stage}`);
+  if (!stage) return null;
   return {
     externalId: String(m.id),
     stage,
