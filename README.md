@@ -58,9 +58,10 @@ The landing page runs with no backend. The core app (gate + auth + data) needs a
    18. `supabase/migrations/0018_avatar_url.sql` — adds `profiles.avatar_url` (manager photo path under `public/managers/`, shown on `/managers/[id]`).
    19. `supabase/seed/0019_manager_avatars.sql` — maps each manager to their committed photo (idempotent `update`s keyed by `display_name`). Apply after the photos are committed under `public/managers/`.
    20. `supabase/seed/0020_manager_summaries.sql` — humorous per-manager blurbs (`profiles.summary`, idempotent `update`s keyed by `display_name`).
-   21. `supabase/migrations/0023_chicken_flavour.sql` — adds `profiles.chicken_flavour` (the "fried chicken order" running gag shown on the profile).
-   22. `supabase/seed/0024_chicken_flavours.sql` — the per-manager chicken orders (idempotent `update`s keyed by `display_name`).
+   21. `supabase/migrations/0023_chicken_flavour.sql` — adds `profiles.chicken_flavour` (the "fried chicken order" running gag). *No longer rendered — hidden from the profile page 2026-06-10; the column and seed are harmless to keep applying.*
+   22. `supabase/seed/0024_chicken_flavours.sql` — the per-manager chicken orders (idempotent `update`s keyed by `display_name`; see the note on step 21).
    23. `supabase/migrations/0025_override_winner.sql` — penalties-aware match override (replaces the `0013` RPC; the override can now record a shootout winner on a level knockout result). **Apply with (or before) deploying the matching app code** — the admin override form passes the new argument.
+   24. `supabase/seed/0026_manager_one_liners.sql` — simplified one-line manager bios (supersedes the `0020` blurbs; idempotent `update`s keyed by `display_name`).
 4. **Disable email confirmation:** Supabase → Authentication → Sign In / Providers → Email → turn **off "Confirm email"** (so friends can register and log in immediately without an SMTP setup).
 5. **Make yourself admin** (after registering): in the SQL Editor, run
    `update profiles set is_admin = true where display_name = '<your name>';`
