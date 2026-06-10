@@ -37,11 +37,6 @@ export default function ManagerProfile({ view }: { view: ManagerProfileView }) {
         {view.summary && (
           <p className="mt-3 whitespace-pre-line text-bodytext">{view.summary}</p>
         )}
-        {view.chickenFlavour && (
-          <p className="mt-3 rounded-lg border border-glow bg-panel px-3 py-2 text-sm text-bodytext">
-            <span className="font-semibold text-gold">🍗 Chicken order:</span> {view.chickenFlavour}
-          </p>
-        )}
       </header>
 
       <section className="flex flex-col gap-3">

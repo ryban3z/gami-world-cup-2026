@@ -22,7 +22,7 @@ export default async function ManagerPage({ params }: { params: { id: string } }
   ] = await Promise.all([
     supabase
       .from("profiles")
-      .select("display_name, summary, chicken_flavour, avatar_url")
+      .select("display_name, summary, avatar_url")
       .eq("id", params.id)
       .single(),
     supabase.from("game_config").select("predictions_locked_at").eq("id", 1).single(),
@@ -47,7 +47,6 @@ export default async function ManagerPage({ params }: { params: { id: string } }
   const view = buildManagerProfileView({
     displayName: manager.display_name,
     summary: manager.summary ?? null,
-    chickenFlavour: manager.chicken_flavour ?? null,
     avatarUrl: manager.avatar_url ?? null,
     isSelf: user.id === params.id,
     targetUserId: params.id,

@@ -17,7 +17,6 @@ function base(overrides: Partial<ManagerProfileInput> = {}): ManagerProfileInput
   return {
     displayName: "W",
     summary: "A bold strategist.",
-    chickenFlavour: "Extra crispy, extra hot sauce.",
     avatarUrl: "/managers/w.jpg",
     isSelf: false,
     targetUserId: "u1",
@@ -45,17 +44,6 @@ describe("buildManagerProfileView — summary", () => {
     expect(buildManagerProfileView(base({ summary: "   " })).summary).toBeNull();
     expect(buildManagerProfileView(base({ summary: "" })).summary).toBeNull();
     expect(buildManagerProfileView(base({ summary: null })).summary).toBeNull();
-  });
-});
-
-describe("buildManagerProfileView — chicken flavour", () => {
-  it("passes through a non-empty chicken flavour", () => {
-    expect(buildManagerProfileView(base()).chickenFlavour).toBe("Extra crispy, extra hot sauce.");
-  });
-  it("trims and maps empty/whitespace/null chicken flavour to null", () => {
-    expect(buildManagerProfileView(base({ chickenFlavour: "  Original  " })).chickenFlavour).toBe("Original");
-    expect(buildManagerProfileView(base({ chickenFlavour: "   " })).chickenFlavour).toBeNull();
-    expect(buildManagerProfileView(base({ chickenFlavour: null })).chickenFlavour).toBeNull();
   });
 });
 

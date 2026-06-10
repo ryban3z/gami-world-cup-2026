@@ -28,7 +28,6 @@ interface PredictionLite {
 export interface ManagerProfileInput {
   displayName: string;
   summary: string | null;
-  chickenFlavour: string | null;
   avatarUrl: string | null;
   isSelf: boolean;
   targetUserId: string;
@@ -52,7 +51,6 @@ export interface CategoryPicks {
 export interface ManagerProfileView {
   displayName: string;
   summary: string | null;
-  chickenFlavour: string | null;
   avatarUrl: string | null;
   initials: string;
   isSelf: boolean;
@@ -64,14 +62,12 @@ export interface ManagerProfileView {
 
 export function buildManagerProfileView(input: ManagerProfileInput): ManagerProfileView {
   const {
-    displayName, summary, chickenFlavour, avatarUrl, isSelf, targetUserId,
+    displayName, summary, avatarUrl, isSelf, targetUserId,
     rosters, board, predictionsLockedAt, categories, predictions,
   } = input;
 
   const trimmed = summary?.trim();
   const cleanSummary = trimmed ? trimmed : null;
-
-  const cleanChicken = chickenFlavour?.trim() ? chickenFlavour.trim() : null;
 
   const cleanAvatar = avatarUrl?.trim() ? avatarUrl.trim() : null;
   // Up to two initials for the no-photo fallback: first letters of the first
@@ -111,7 +107,6 @@ export function buildManagerProfileView(input: ManagerProfileInput): ManagerProf
   return {
     displayName,
     summary: cleanSummary,
-    chickenFlavour: cleanChicken,
     avatarUrl: cleanAvatar,
     initials,
     isSelf,
