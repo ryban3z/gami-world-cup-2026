@@ -13,7 +13,13 @@ function MatchRow({ m }: { m: MatchStripItem }) {
         )}
       </span>
       <span className="shrink-0 font-bold text-gold">
-        {done ? `${m.homeScore}–${m.awayScore}` : "v"}
+        {/* A final can briefly lack scores (provider lag, manual override) —
+            show FT rather than interpolating nulls. */}
+        {done
+          ? m.homeScore != null && m.awayScore != null
+            ? `${m.homeScore}–${m.awayScore}`
+            : "FT"
+          : "v"}
       </span>
       <span className="flex flex-1 items-center gap-1 text-white">
         {m.awayFlag && (

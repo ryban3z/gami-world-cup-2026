@@ -39,6 +39,15 @@ describe("mapApiMatch", () => {
     expect(m.homeExternalId).toBeNull();
     expect(m.awayExternalId).toBeNull();
   });
+  it("holds a FINISHED match with no score at live until the result is entered", () => {
+    const m = mapApiMatch({
+      ...finishedMatch,
+      score: { winner: null, fullTime: { home: null, away: null } },
+    })!;
+    expect(m.status).toBe("live");
+    expect(m.homeScore).toBeNull();
+    expect(m.awayScore).toBeNull();
+  });
   it("treats extra time / penalties / LIVE as live, AWARDED as final", () => {
     const at = (status: string) => mapApiMatch({ ...finishedMatch, status })!.status;
     expect(at("EXTRA_TIME")).toBe("live");

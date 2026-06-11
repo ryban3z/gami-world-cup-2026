@@ -53,6 +53,14 @@ const ext = (id: number | null): string | null => (id == null ? null : String(id
 export function mapApiMatch(m: ApiMatch): MappedMatch | null {
   const stage = STAGE_MAP[m.stage];
   if (!stage) return null;
+  const homeScore = m.score?.fullTime?.home ?? null;
+  const awayScore = m.score?.fullTime?.away ?? null;
+  let status = STATUS_MAP[m.status] ?? "scheduled";
+  // football-data can flip a match to FINISHED minutes before the result is
+  // entered (free-tier data lag). A score-less "final" would surface as a
+  // null–null result and can't be scored — hold it at "live" until the
+  // numbers arrive; the next ingest finalises it.
+  if (status === "final" && homeScore == null && awayScore == null) status = "live";
   return {
     externalId: String(m.id),
     stage,
@@ -60,9 +68,9 @@ export function mapApiMatch(m: ApiMatch): MappedMatch | null {
     homeExternalId: ext(m.homeTeam?.id ?? null),
     awayExternalId: ext(m.awayTeam?.id ?? null),
     kickoffAt: m.utcDate ?? null,
-    status: STATUS_MAP[m.status] ?? "scheduled",
-    homeScore: m.score?.fullTime?.home ?? null,
-    awayScore: m.score?.fullTime?.away ?? null,
+    status,
+    homeScore,
+    awayScore,
     winner: (m.score?.winner ?? null) as ApiWinner,
   };
 }
