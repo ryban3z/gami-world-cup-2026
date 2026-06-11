@@ -172,6 +172,8 @@ export default async function HomePage({
         />
       )}
 
+      {revealed && strip && <MatchStrip recent={strip.recent} upcoming={strip.upcoming} />}
+
       {revealed && state?.rosters && (
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-caption">Rosters</h2>
@@ -189,8 +191,6 @@ export default async function HomePage({
           />
         </section>
       )}
-
-      {revealed && strip && <MatchStrip recent={strip.recent} upcoming={strip.upcoming} />}
 
       {/* Who's in — most useful before the draft kicks off. */}
       {inRegistration && (
