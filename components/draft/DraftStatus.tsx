@@ -35,7 +35,7 @@ export interface DraftState {
 }
 
 export default function DraftStatus({ state }: { state: DraftState }) {
-  const { phase, picks_total } = state;
+  const { phase } = state;
 
   if (phase === "registration") {
     return (
@@ -46,9 +46,11 @@ export default function DraftStatus({ state }: { state: DraftState }) {
   }
 
   // group_locked and beyond (the draft phase is handled by TurnBanner on /home)
-  return (
-    <p className="text-lg font-bold text-gold">
-      Draft complete — all {picks_total} picks are in. Rosters revealed below.
-    </p>
-  );
+  const message =
+    phase === "group_locked"
+      ? "Group stage underway — points roll in as results come through."
+      : phase === "complete"
+        ? "Tournament complete — final standings are in."
+        : "Knockout rounds underway.";
+  return <p className="text-lg font-bold text-gold">{message}</p>;
 }

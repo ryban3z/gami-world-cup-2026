@@ -145,21 +145,6 @@ export default async function HomePage({
         state && <DraftStatus state={state} />
       )}
 
-      {state?.is_admin && (
-        <a
-          href="/admin"
-          className={`inline-block self-start rounded-full border border-gold/60 px-4 py-2 text-sm font-bold text-gold hover:bg-gold hover:text-navy ${pressable}`}
-        >
-          ⚙ Admin
-        </a>
-      )}
-
-      {predictionsStarted && (
-        <a href="/predictions" className={predClass}>
-          {predLabel}
-        </a>
-      )}
-
       {/* The A–L group grid is the draft pick interface — only needed while the
           draft is live. Post-draft, ownership is shown by manager in Rosters below. */}
       {state && phase === "draft" && (
@@ -208,6 +193,23 @@ export default async function HomePage({
             ))}
           </ul>
         </section>
+      )}
+
+      {/* Secondary navigation — live scores and rosters above are what people
+          open the app for, so these sit at the bottom of the page. */}
+      {predictionsStarted && (
+        <a href="/predictions" className={predClass}>
+          {predLabel}
+        </a>
+      )}
+
+      {state?.is_admin && (
+        <a
+          href="/admin"
+          className={`inline-block self-start rounded-full border border-gold/60 px-4 py-2 text-sm font-bold text-gold hover:bg-gold hover:text-navy ${pressable}`}
+        >
+          ⚙ Admin
+        </a>
       )}
 
       <form action={signOut}>
