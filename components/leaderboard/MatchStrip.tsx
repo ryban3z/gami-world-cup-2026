@@ -1,10 +1,15 @@
 import type { MatchStripItem } from "@/lib/leaderboardView";
+import LocalKickoff from "./LocalKickoff";
 
 function MatchRow({ m }: { m: MatchStripItem }) {
   const done = m.status === "final";
   return (
     <li className="flex items-center gap-2 py-1 text-sm">
-      <span className="w-20 shrink-0 text-xs text-caption">{m.stageLabel}</span>
+      <span className="flex w-20 shrink-0 flex-col text-xs text-caption">
+        <span>{m.stageLabel}</span>
+        {/* Local kickoff time — only meaningful for fixtures not yet played. */}
+        {!done && <LocalKickoff iso={m.kickoffAt} />}
+      </span>
       <span className="flex flex-1 items-center justify-end gap-1 text-white">
         <span className="truncate">{m.homeName}</span>
         {m.homeFlag && (

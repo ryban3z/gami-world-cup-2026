@@ -29,6 +29,19 @@ function base(overrides: Partial<ManagerProfileInput> = {}): ManagerProfileInput
       { category_id: "c2", pick_slot: 2, pick_value: "Mbappé" },
       { category_id: "c2", pick_slot: 1, pick_value: "Haaland" },
     ],
+    score: {
+      total_points: 14,
+      breakdown: {
+        group: 6,
+        knockout: 5,
+        bonus: 3,
+        by_team: [
+          { team: "t1", phase: "group", points: 4 },
+          { team: "t1", phase: "knockout", points: 5 },
+          { team: "t2", phase: "group", points: 2 },
+        ],
+      },
+    },
     ...overrides,
   };
 }
@@ -77,13 +90,13 @@ describe("buildManagerProfileView — roster", () => {
     const v = buildManagerProfileView(base());
     expect(v.rosterVisible).toBe(true);
     expect(v.teams).toEqual([
-      { name: "Japan", flagUrl: "jp.png" },
-      { name: "Argentina", flagUrl: "ar.png" },
+      { name: "Japan", flagUrl: "jp.png", points: 2 },
+      { name: "Argentina", flagUrl: "ar.png", points: 9 },
     ]);
   });
   it("falls back to em dash for a team id missing from the board", () => {
     const v = buildManagerProfileView(base({ rosters: [{ user_id: "u1", team_ids: ["t9"] }] }));
-    expect(v.teams).toEqual([{ name: "—", flagUrl: null }]);
+    expect(v.teams).toEqual([{ name: "—", flagUrl: null, points: 0 }]);
   });
   it("yields empty teams when revealed but this manager has no roster row", () => {
     const v = buildManagerProfileView(base({ rosters: [{ user_id: "other", team_ids: ["t1"] }] }));
@@ -108,5 +121,27 @@ describe("buildManagerProfileView — predictions", () => {
       { categoryName: "Champion", picks: ["Brazil"] },
       { categoryName: "Top Scorer", picks: ["Haaland", "Mbappé"] },
     ]);
+  });
+});
+
+describe("buildManagerProfileView — points", () => {
+  it("surfaces total and breakdown from the score row", () => {
+    expect(buildManagerProfileView(base()).points).toEqual({
+      total: 14,
+      group: 6,
+      knockout: 5,
+      bonus: 3,
+    });
+  });
+  it("sums by_team points across ownership phases onto each team", () => {
+    const v = buildManagerProfileView(base());
+    // Argentina (t1) scored in both group (4) and knockout (5) phases.
+    expect(v.teams.find((t) => t.name === "Argentina")?.points).toBe(9);
+    expect(v.teams.find((t) => t.name === "Japan")?.points).toBe(2);
+  });
+  it("defaults to all zeros when the manager has no score row", () => {
+    const v = buildManagerProfileView(base({ score: null }));
+    expect(v.points).toEqual({ total: 0, group: 0, knockout: 0, bonus: 0 });
+    expect(v.teams.every((t) => t.points === 0)).toBe(true);
   });
 });

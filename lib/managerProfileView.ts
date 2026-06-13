@@ -25,6 +25,16 @@ interface PredictionLite {
   pick_value: string;
 }
 
+interface ScoreLite {
+  total_points: number;
+  breakdown: {
+    group: number;
+    knockout: number;
+    bonus: number;
+    by_team: { team: string; phase: "group" | "knockout"; points: number }[];
+  };
+}
+
 export interface ManagerProfileInput {
   displayName: string;
   summary: string | null;
@@ -36,11 +46,20 @@ export interface ManagerProfileInput {
   predictionsLockedAt: string | null;
   categories: CategoryLite[]; // active categories, in display order
   predictions: PredictionLite[]; // this manager's active picks
+  score: ScoreLite | null; // this manager's score row; null until they've scored
 }
 
 export interface ProfileTeam {
   name: string;
   flagUrl: string | null;
+  points: number; // accumulated points from this team (all ownership phases)
+}
+
+export interface ManagerPoints {
+  total: number;
+  group: number;
+  knockout: number;
+  bonus: number;
 }
 
 export interface CategoryPicks {
@@ -58,12 +77,13 @@ export interface ManagerProfileView {
   teams: ProfileTeam[];
   predictionsVisible: boolean;
   predictionsByCategory: CategoryPicks[];
+  points: ManagerPoints;
 }
 
 export function buildManagerProfileView(input: ManagerProfileInput): ManagerProfileView {
   const {
     displayName, summary, avatarUrl, isSelf, targetUserId,
-    rosters, board, predictionsLockedAt, categories, predictions,
+    rosters, board, predictionsLockedAt, categories, predictions, score,
   } = input;
 
   const trimmed = summary?.trim();
@@ -79,6 +99,14 @@ export function buildManagerProfileView(input: ManagerProfileInput): ManagerProf
       : (words[0] ?? "?").slice(0, 2)
   ).toUpperCase();
 
+  // Per-team points: sum every by_team entry for a team id (a team can score in
+  // both the group and knockout ownership phases, though only one manager owns
+  // each phase). Teams with no entry default to 0.
+  const pointsByTeam = new Map<string, number>();
+  for (const bt of score?.breakdown.by_team ?? []) {
+    pointsByTeam.set(bt.team, (pointsByTeam.get(bt.team) ?? 0) + bt.points);
+  }
+
   // Roster is revealed once draft_state() returns a (non-null) rosters array.
   const rosterVisible = rosters !== null;
   const byId = new Map(board.map((t) => [t.id, t]));
@@ -86,9 +114,20 @@ export function buildManagerProfileView(input: ManagerProfileInput): ManagerProf
   const teams: ProfileTeam[] = row
     ? row.team_ids.map((id) => {
         const t = byId.get(id);
-        return { name: t?.name ?? "—", flagUrl: t?.flag_url ?? null };
+        return {
+          name: t?.name ?? "—",
+          flagUrl: t?.flag_url ?? null,
+          points: pointsByTeam.get(id) ?? 0,
+        };
       })
     : [];
+
+  const points: ManagerPoints = {
+    total: score?.total_points ?? 0,
+    group: score?.breakdown.group ?? 0,
+    knockout: score?.breakdown.knockout ?? 0,
+    bonus: score?.breakdown.bonus ?? 0,
+  };
 
   // Others' predictions are visible only after the kickoff lock; your own always are.
   const predictionsVisible = predictionsLockedAt !== null || isSelf;
@@ -114,5 +153,6 @@ export function buildManagerProfileView(input: ManagerProfileInput): ManagerProf
     teams,
     predictionsVisible,
     predictionsByCategory,
+    points,
   };
 }

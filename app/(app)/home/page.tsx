@@ -118,9 +118,11 @@ export default async function HomePage({
         </p>
       )}
 
+      {state && phase !== "draft" && <DraftStatus state={state} />}
+
       {revealed && <LeaderboardSummary rows={summaryRows} />}
 
-      {state && phase === "draft" ? (
+      {state && phase === "draft" && (
         <>
           <TurnBanner
             isMyTurn={state.is_my_turn}
@@ -141,8 +143,6 @@ export default async function HomePage({
             isMyTurn={state.is_my_turn}
           />
         </>
-      ) : (
-        state && <DraftStatus state={state} />
       )}
 
       {/* The A–L group grid is the draft pick interface — only needed while the

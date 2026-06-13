@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { DraftState } from "@/components/draft/DraftStatus";
-import { buildManagerProfileView } from "@/lib/managerProfileView";
+import { buildManagerProfileView, type ManagerProfileInput } from "@/lib/managerProfileView";
 import ManagerProfile from "@/components/managers/ManagerProfile";
 
 export const dynamic = "force-dynamic"; // reflect live phase/lock state
@@ -19,6 +19,7 @@ export default async function ManagerPage({ params }: { params: { id: string } }
     { data: draft },
     { data: categories },
     { data: predictions },
+    { data: score },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -33,6 +34,11 @@ export default async function ManagerPage({ params }: { params: { id: string } }
       .select("category_id, pick_slot, pick_value")
       .eq("user_id", params.id)
       .eq("is_active", true),
+    supabase
+      .from("scores")
+      .select("total_points, breakdown")
+      .eq("user_id", params.id)
+      .maybeSingle(),
   ]);
 
   if (!manager) notFound();
@@ -55,6 +61,7 @@ export default async function ManagerPage({ params }: { params: { id: string } }
     predictionsLockedAt: cfg?.predictions_locked_at ?? null,
     categories: categories ?? [],
     predictions: predictions ?? [],
+    score: (score as ManagerProfileInput["score"]) ?? null,
   });
 
   return <ManagerProfile view={view} />;
