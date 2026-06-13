@@ -4,15 +4,16 @@ import LocalKickoff from "./LocalKickoff";
 function MatchRow({ m }: { m: MatchStripItem }) {
   const done = m.status === "final";
   return (
-    <li className="flex flex-col gap-0.5 py-1.5">
+    <li className="flex flex-col items-center gap-0.5 py-1.5 text-center">
       {/* Meta line: stage + (for upcoming fixtures) the local kickoff time. Kept
-          on its own line so the matchup below can use the full row width — on
-          mobile a fixed left column squeezed the team names into truncation. */}
+          on its own line above the matchup so neither competes for width. */}
       <span className="text-xs text-caption">
         {m.stageLabel}
         {!done && <LocalKickoff iso={m.kickoffAt} />}
       </span>
-      <span className="flex items-center gap-2 text-sm">
+      {/* Capped width + centered so the matchup clusters in the middle of the
+          card rather than stretching edge-to-edge on a wide desktop layout. */}
+      <span className="flex w-full max-w-lg items-center gap-2 text-sm">
         <span className="flex flex-1 items-center justify-end gap-1 text-white">
           <span className="truncate">{m.homeName}</span>
           {m.homeFlag && (
