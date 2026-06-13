@@ -116,6 +116,21 @@ export function buildLeaderboard(
   });
 }
 
+// Per-(manager, team) points for the dashboard roster cards, summed across
+// ownership phases. Keyed `${userId}::${teamId}`. A team's group points sit on
+// the group owner and its knockout points on the knockout owner, so a card shows
+// exactly what that team has earned for that manager. Missing → treated as 0.
+export function buildRosterTeamPoints(scores: ScoreLite[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const s of scores) {
+    for (const bt of s.breakdown?.by_team ?? []) {
+      const key = `${s.user_id}::${bt.team}`;
+      out[key] = (out[key] ?? 0) + bt.points;
+    }
+  }
+  return out;
+}
+
 // The viewer's teams joined with their standings, labelled and ordered for the
 // "My teams" panel. Champion first, then still-alive teams (deepest stage
 // first), eliminated teams last; alphabetical within a tier.

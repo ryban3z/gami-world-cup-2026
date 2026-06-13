@@ -12,7 +12,7 @@ import DraftOrderRail from "@/components/draft/DraftOrderRail";
 import MyPicks from "@/components/draft/MyPicks";
 import LeaderboardSummary from "@/components/leaderboard/LeaderboardSummary";
 import MatchStrip from "@/components/leaderboard/MatchStrip";
-import { buildLeaderboard, buildMatchStrip } from "@/lib/leaderboardView";
+import { buildLeaderboard, buildMatchStrip, buildRosterTeamPoints } from "@/lib/leaderboardView";
 import { bonusPicksComplete } from "@/lib/predictions";
 
 export const dynamic = "force-dynamic"; // always reflect live game state
@@ -89,6 +89,8 @@ export default async function HomePage({
   const strip = revealed
     ? buildMatchStrip(matches ?? [], teams ?? [], { recent: 3, upcoming: 3 })
     : null;
+  // Per-team points for the roster cards (keyed `${userId}::${teamId}`).
+  const rosterTeamPoints = revealed ? buildRosterTeamPoints(scores ?? []) : {};
 
   // Bonus-predictions CTA: while the window is open, nudge hard if picks are
   // incomplete (filled urgent button) or confirm with a tick if done. Once
@@ -173,6 +175,7 @@ export default async function HomePage({
             rosters={state.rosters}
             board={state.board}
             profilesUnlocked={profilesUnlocked}
+            teamPoints={rosterTeamPoints}
           />
         </section>
       )}

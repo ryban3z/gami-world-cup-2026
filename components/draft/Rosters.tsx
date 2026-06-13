@@ -9,10 +9,12 @@ export default function Rosters({
   rosters,
   board,
   profilesUnlocked = false,
+  teamPoints = {},
 }: {
   rosters: Roster[];
   board: BoardTeam[];
   profilesUnlocked?: boolean;
+  teamPoints?: Record<string, number>; // `${userId}::${teamId}` → points so far
 }) {
   const byId = new Map(board.map((t) => [t.id, t]));
   return (
@@ -26,13 +28,15 @@ export default function Rosters({
             <ul className="mt-2 flex flex-col gap-1">
               {r.team_ids.map((id) => {
                 const t = byId.get(id);
+                const pts = teamPoints[`${r.user_id}::${id}`] ?? 0;
                 return (
                   <li key={id} className="flex items-center gap-2 text-sm text-white">
                     {t?.flag_url && (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={t.flag_url} alt="" className="h-4 w-6 rounded-sm object-cover" />
                     )}
-                    <span>{t?.name ?? "—"}</span>
+                    <span className="truncate">{t?.name ?? "—"}</span>
+                    <span className="ml-auto shrink-0 text-caption">{pts} pts</span>
                   </li>
                 );
               })}

@@ -88,6 +88,30 @@ describe("buildLeaderboard", () => {
   });
 });
 
+import { buildRosterTeamPoints } from "@/lib/leaderboardView";
+
+describe("buildRosterTeamPoints", () => {
+  it("keys points by `${userId}::${teamId}`, summed across phases", () => {
+    const lookup = buildRosterTeamPoints([
+      score("u1", 14, [
+        { team: "t1", phase: "group", points: 4 },
+        { team: "t1", phase: "knockout", points: 5 },
+        { team: "t2", phase: "group", points: 2 },
+      ]),
+      score("u2", 3, [{ team: "t3", phase: "group", points: 3 }]),
+    ]);
+    expect(lookup["u1::t1"]).toBe(9);
+    expect(lookup["u1::t2"]).toBe(2);
+    expect(lookup["u2::t3"]).toBe(3);
+  });
+
+  it("omits teams with no score entry (caller defaults them to 0)", () => {
+    const lookup = buildRosterTeamPoints([score("u1", 0, [])]);
+    expect(lookup["u1::t1"]).toBeUndefined();
+    expect(Object.keys(lookup)).toEqual([]);
+  });
+});
+
 import { buildMyTeams } from "@/lib/leaderboardView";
 
 describe("buildMyTeams", () => {
