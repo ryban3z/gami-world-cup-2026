@@ -84,10 +84,10 @@ export default async function HomePage({
   const summaryRows = revealed
     ? buildLeaderboard(scores ?? [], list, teams ?? [], user.id)
     : [];
-  // Compact recent/upcoming match strip — live phases only. Small counts keep
-  // home tight; the full strip stays on /leaderboard.
+  // Recent/upcoming match strip — live phases only. Shows the last 5 results
+  // and next 5 fixtures; the full strip stays on /leaderboard.
   const strip = revealed
-    ? buildMatchStrip(matches ?? [], teams ?? [], { recent: 3, upcoming: 3 })
+    ? buildMatchStrip(matches ?? [], teams ?? [], { recent: 5, upcoming: 5 })
     : null;
   // Per-team points for the roster cards (keyed `${userId}::${teamId}`).
   const rosterTeamPoints = revealed ? buildRosterTeamPoints(scores ?? []) : {};

@@ -14,7 +14,7 @@ function MatchRow({ m }: { m: MatchStripItem }) {
       {/* Capped width + centered so the matchup clusters in the middle of the
           card rather than stretching edge-to-edge on a wide desktop layout. */}
       <span className="flex w-full max-w-lg items-center gap-2 text-sm">
-        <span className="flex flex-1 items-center justify-end gap-1 text-white">
+        <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-white">
           <span className="truncate">{m.homeName}</span>
           {m.homeFlag && (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -30,7 +30,7 @@ function MatchRow({ m }: { m: MatchStripItem }) {
               : "FT"
             : "v"}
         </span>
-        <span className="flex flex-1 items-center gap-1 text-white">
+        <span className="flex min-w-0 flex-1 items-center gap-1 text-white">
           {m.awayFlag && (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img src={m.awayFlag} alt="" className="h-3 w-5 shrink-0 rounded-sm object-cover" />
