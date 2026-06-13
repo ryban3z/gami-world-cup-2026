@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-// Kickoff time in the *viewer's* local timezone. The pages are server-rendered
-// in UTC, so formatting has to happen client-side — we hold the slot empty until
-// after mount, then fill it in. This avoids a hydration mismatch (server UTC vs
-// client local) and the brief flash of the wrong timezone that comes with it.
+// Kickoff time in the *viewer's* local timezone, rendered inline after the stage
+// label (e.g. "Group B · Sat 21:00"). The pages are server-rendered in UTC, so
+// the formatting has to happen client-side: a timed kickoff renders nothing
+// until the post-mount effect fills in the local-tz label — identical on the
+// server and the first client render, so there's no hydration mismatch and no
+// flash of the wrong timezone. A null kickoff (unscheduled fixture) is
+// deterministic, so it renders "· TBD" on the server too.
 export default function LocalKickoff({ iso }: { iso: string | null }) {
   const [label, setLabel] = useState<string | null>(null);
 
@@ -22,11 +25,7 @@ export default function LocalKickoff({ iso }: { iso: string | null }) {
     );
   }, [iso]);
 
-  // Reserve the line so the row doesn't jump when the label appears. "TBD" for
-  // unscheduled fixtures (null kickoff); a non-breaking space pre-mount.
-  return (
-    <span className="text-[11px] text-caption" suppressHydrationWarning>
-      {iso ? (label ?? " ") : "TBD"}
-    </span>
-  );
+  if (!iso) return <span> · TBD</span>;
+  if (!label) return null;
+  return <span> · {label}</span>;
 }

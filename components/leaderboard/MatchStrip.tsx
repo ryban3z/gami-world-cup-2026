@@ -4,34 +4,38 @@ import LocalKickoff from "./LocalKickoff";
 function MatchRow({ m }: { m: MatchStripItem }) {
   const done = m.status === "final";
   return (
-    <li className="flex items-center gap-2 py-1 text-sm">
-      <span className="flex w-20 shrink-0 flex-col text-xs text-caption">
-        <span>{m.stageLabel}</span>
-        {/* Local kickoff time — only meaningful for fixtures not yet played. */}
+    <li className="flex flex-col gap-0.5 py-1.5">
+      {/* Meta line: stage + (for upcoming fixtures) the local kickoff time. Kept
+          on its own line so the matchup below can use the full row width — on
+          mobile a fixed left column squeezed the team names into truncation. */}
+      <span className="text-xs text-caption">
+        {m.stageLabel}
         {!done && <LocalKickoff iso={m.kickoffAt} />}
       </span>
-      <span className="flex flex-1 items-center justify-end gap-1 text-white">
-        <span className="truncate">{m.homeName}</span>
-        {m.homeFlag && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={m.homeFlag} alt="" className="h-3 w-5 rounded-sm object-cover" />
-        )}
-      </span>
-      <span className="shrink-0 font-bold text-gold">
-        {/* A final can briefly lack scores (provider lag, manual override) —
-            show FT rather than interpolating nulls. */}
-        {done
-          ? m.homeScore != null && m.awayScore != null
-            ? `${m.homeScore}–${m.awayScore}`
-            : "FT"
-          : "v"}
-      </span>
-      <span className="flex flex-1 items-center gap-1 text-white">
-        {m.awayFlag && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={m.awayFlag} alt="" className="h-3 w-5 rounded-sm object-cover" />
-        )}
-        <span className="truncate">{m.awayName}</span>
+      <span className="flex items-center gap-2 text-sm">
+        <span className="flex flex-1 items-center justify-end gap-1 text-white">
+          <span className="truncate">{m.homeName}</span>
+          {m.homeFlag && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={m.homeFlag} alt="" className="h-3 w-5 shrink-0 rounded-sm object-cover" />
+          )}
+        </span>
+        <span className="shrink-0 font-bold text-gold">
+          {/* A final can briefly lack scores (provider lag, manual override) —
+              show FT rather than interpolating nulls. */}
+          {done
+            ? m.homeScore != null && m.awayScore != null
+              ? `${m.homeScore}–${m.awayScore}`
+              : "FT"
+            : "v"}
+        </span>
+        <span className="flex flex-1 items-center gap-1 text-white">
+          {m.awayFlag && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={m.awayFlag} alt="" className="h-3 w-5 shrink-0 rounded-sm object-cover" />
+          )}
+          <span className="truncate">{m.awayName}</span>
+        </span>
       </span>
     </li>
   );
