@@ -16,11 +16,12 @@ export async function runRecalc(db: DB = createServiceClient()) {
     db.from("bonus_categories").select("id, key, resolved_answer"),
     db.from("bonus_predictions").select("user_id, category_id, pick_value").eq("is_active", true),
     db.from("scoring_rules").select("stage, points"),
-    db.from("scoring_config").select("group_qualify_pts, bonus_correct_pts, champion_pts").eq("id", 1).single(),
+    db.from("scoring_config").select("group_qualify_pts, group_win_pts, bonus_correct_pts, champion_pts").eq("id", 1).single(),
     db.from("profiles").select("id"),
   ]);
 
-  const standings = deriveStandings((matchesQ.data ?? []) as MatchRow[]);
+  const matches = (matchesQ.data ?? []) as MatchRow[];
+  const standings = deriveStandings(matches);
   const now = new Date().toISOString();
   if (standings.length) {
     await db.from("team_standings").upsert(
@@ -32,6 +33,7 @@ export async function runRecalc(db: DB = createServiceClient()) {
   const scores = computeScores({
     userIds: (profilesQ.data ?? []).map((p) => p.id),
     standings,
+    matches,
     ownership: (ownershipQ.data ?? []) as OwnershipRow[],
     categories: (catsQ.data ?? []) as CategoryRow[],
     predictions: (predsQ.data ?? []) as PredictionRow[],

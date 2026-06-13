@@ -91,6 +91,7 @@ export interface ScoringRule {
 }
 export interface ScoringConfig {
   group_qualify_pts: number;
+  group_win_pts: number;
   bonus_correct_pts: number;
   champion_pts: number;
 }
@@ -98,6 +99,7 @@ export interface ScoringConfig {
 export interface ComputeInput {
   userIds: string[];
   standings: StandingRow[];
+  matches: MatchRow[];
   ownership: OwnershipRow[];
   categories: CategoryRow[];
   predictions: PredictionRow[];
@@ -123,7 +125,7 @@ export interface ComputedScore {
 }
 
 export function computeScores(input: ComputeInput): ComputedScore[] {
-  const { userIds, standings, ownership, categories, predictions, rules, config } = input;
+  const { userIds, standings, matches, ownership, categories, predictions, rules, config } = input;
 
   const groupOwner = new Map<string, string>();
   const knockoutOwner = new Map<string, string>();
@@ -141,16 +143,19 @@ export function computeScores(input: ComputeInput): ComputedScore[] {
     return b;
   };
 
+  // Group-stage points (qualify + per-win) accrue to the phase='group' owner and
+  // are merged into a single per-team line; the knockout ladder is separate and
+  // routes to the knockout owner.
+  const groupPtsByTeam = new Map<string, number>();
+  const addGroupPts = (team: string, pts: number) => {
+    if (pts <= 0 || !groupOwner.has(team)) return;
+    groupPtsByTeam.set(team, (groupPtsByTeam.get(team) ?? 0) + pts);
+  };
+
   for (const s of standings) {
     const qualified = STAGE_RANK[s.furthest_stage] >= STAGE_RANK["r32"];
-    if (qualified) {
-      const owner = groupOwner.get(s.team_id);
-      if (owner) {
-        const b = ensure(owner);
-        b.group += config.group_qualify_pts;
-        b.by_team.push({ team: s.team_id, phase: "group", points: config.group_qualify_pts });
-      }
-    }
+    if (qualified) addGroupPts(s.team_id, config.group_qualify_pts);
+
     const ladderPts = (ladder.get(s.furthest_stage) ?? 0) + (s.is_champion ? config.champion_pts : 0);
     if (ladderPts > 0) {
       const owner = koOwner(s.team_id);
@@ -160,6 +165,18 @@ export function computeScores(input: ComputeInput): ComputedScore[] {
         b.by_team.push({ team: s.team_id, phase: "knockout", points: ladderPts });
       }
     }
+  }
+
+  // Each finished group-stage win earns group_win_pts for the team's group owner.
+  for (const m of matches) {
+    if (m.stage !== "group" || m.status !== "final" || !m.winner_team_id) continue;
+    addGroupPts(m.winner_team_id, config.group_win_pts);
+  }
+
+  for (const [team, pts] of groupPtsByTeam) {
+    const b = ensure(groupOwner.get(team)!);
+    b.group += pts;
+    b.by_team.push({ team, phase: "group", points: pts });
   }
 
   const catById = new Map(categories.map((c) => [c.id, c]));

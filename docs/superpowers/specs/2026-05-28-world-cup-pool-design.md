@@ -118,7 +118,10 @@ Exact games, format, and point values are **TBD** — captured here as a directi
 **Group-stage reward → group-stage owner (per team):**
 | Achievement | Points |
 |---|---|
-| Qualifies out of group (reaches Round of 32) | 5 |
+| Each group-stage win | 1 |
+| Qualifies out of group (reaches Round of 32) | 4 |
+
+> **Group-win points (added 2026-06-13, seed `0028`):** each finished group-stage win earns 1 point for the team's `phase='group'` owner, and the qualify reward was shaded 5 → 4 to compensate. Motivation: the leaderboard stays flat for the whole group stage if qualifying is the only group reward; per-win points move it from matchday one and reward strong picks earlier. A draw scores nothing. `group_win_pts` is a tunable `scoring_config` column (migration `0027`, default 0 = inert). Recalc is idempotent, so applying mid-stage credits already-played group matches retroactively.
 
 **Knockout reward → knockout owner (per team, by furthest stage reached):**
 | Furthest stage reached | Points |

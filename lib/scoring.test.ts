@@ -50,7 +50,7 @@ describe("deriveStandings", () => {
   });
 });
 
-const config = { group_qualify_pts: 5, bonus_correct_pts: 4, champion_pts: 6 };
+const config = { group_qualify_pts: 4, group_win_pts: 1, bonus_correct_pts: 4, champion_pts: 6 };
 const rules = [
   { stage: "r32", points: 0 }, { stage: "r16", points: 6 }, { stage: "qf", points: 10 },
   { stage: "sf", points: 14 }, { stage: "final", points: 18 },
@@ -60,6 +60,7 @@ function scoreInput(over: Partial<ComputeInput> = {}): ComputeInput {
   return {
     userIds: ["u1", "u2"],
     standings: deriveStandings(matches),
+    matches,
     ownership: [
       { user_id: "u1", team_id: "A", phase: "group" }, // champion, no swap
       { user_id: "u2", team_id: "B", phase: "group" }, // runner-up drafted by u2...
@@ -83,8 +84,8 @@ function scoreInput(over: Partial<ComputeInput> = {}): ComputeInput {
 describe("computeScores", () => {
   const byUser = Object.fromEntries(computeScores(scoreInput()).map((s) => [s.user_id, s]));
   it("group-qualify points go to the group owner", () => {
-    expect(byUser["u1"].breakdown.group).toBe(5); // owns A (group)
-    expect(byUser["u2"].breakdown.group).toBe(5); // owns B (group)
+    expect(byUser["u1"].breakdown.group).toBe(4); // owns A (group)
+    expect(byUser["u2"].breakdown.group).toBe(4); // owns B (group)
   });
   it("knockout points route to the knockout owner (explicit overrides group)", () => {
     // A champion: ladder final 18 + champion 6 = 24 -> u1 (group owner, no swap).
@@ -97,11 +98,67 @@ describe("computeScores", () => {
     expect(byUser["u2"].breakdown.bonus).toBe(0);
   });
   it("totals sum the buckets", () => {
-    expect(byUser["u1"].total_points).toBe(5 + (24 + 18) + 8);
+    expect(byUser["u1"].total_points).toBe(4 + (24 + 18) + 8);
   });
   it("undrafted qualifier scores no one", () => {
     const all = computeScores(scoreInput());
     const everyTeam = all.flatMap((s) => s.breakdown.by_team.map((t) => t.team));
     expect(everyTeam).not.toContain("Z");
+  });
+});
+
+describe("computeScores — group-stage win points", () => {
+  const base = (over: Partial<ComputeInput> = {}): ComputeInput => ({
+    userIds: ["u1"],
+    standings: [],
+    matches: [],
+    ownership: [{ user_id: "u1", team_id: "A", phase: "group" }],
+    categories: [],
+    predictions: [],
+    rules: rules.map((r) => ({ ...r })),
+    config,
+    ...over,
+  });
+  const run = (over: Partial<ComputeInput>) => computeScores(base(over))[0];
+
+  it("awards group_win_pts per finished group win to the group owner", () => {
+    // A's furthest stage is 'group' (not qualified), so this isolates win points.
+    const ms = [
+      M({ stage: "group", winner_team_id: "A", status: "final" }),
+      M({ stage: "group", winner_team_id: "A", status: "final" }),
+      M({ stage: "group", winner_team_id: null, status: "final" }), // draw — no points
+      M({ stage: "group", winner_team_id: "A", status: "scheduled" }), // not played — no points
+    ];
+    expect(run({ matches: ms, standings: deriveStandings(ms) }).breakdown.group).toBe(2);
+  });
+
+  it("merges qualify + win points into a single by_team line", () => {
+    const ms = [
+      M({ stage: "group", winner_team_id: "A", status: "final" }),
+      M({ stage: "group", winner_team_id: "A", status: "final" }),
+      M({ stage: "r32", home_team_id: "A", status: "scheduled" }), // A advanced → qualifies
+    ];
+    const s = run({ matches: ms, standings: deriveStandings(ms) });
+    expect(s.breakdown.group).toBe(4 + 2); // qualify 4 + 2 wins
+    const aGroup = s.breakdown.by_team.filter((t) => t.team === "A" && t.phase === "group");
+    expect(aGroup).toHaveLength(1);
+    expect(aGroup[0].points).toBe(6);
+  });
+
+  it("ignores group wins by undrafted teams", () => {
+    const ms = [
+      M({ stage: "group", winner_team_id: "Z", status: "final" }), // Z undrafted
+      M({ stage: "group", winner_team_id: "A", status: "final" }),
+    ];
+    const s = run({ matches: ms, standings: deriveStandings(ms) });
+    expect(s.breakdown.group).toBe(1);
+    expect(s.breakdown.by_team.map((t) => t.team)).toEqual(["A"]);
+  });
+
+  it("group_win_pts = 0 is inert (migration default)", () => {
+    const ms = [M({ stage: "group", winner_team_id: "A", status: "final" })];
+    const s = run({ matches: ms, standings: deriveStandings(ms), config: { ...config, group_win_pts: 0 } });
+    expect(s.breakdown.group).toBe(0);
+    expect(s.breakdown.by_team).toHaveLength(0);
   });
 });
