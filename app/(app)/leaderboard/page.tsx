@@ -51,7 +51,7 @@ export default async function LeaderboardPage() {
     { data: teams },
   ] = await Promise.all([
     supabase.from("scores").select("user_id, total_points, breakdown"),
-    supabase.from("profiles").select("id, display_name"),
+    supabase.from("profiles").select("id, display_name, avatar_url"),
     supabase.from("team_standings").select("team_id, furthest_stage, is_eliminated, is_champion"),
     supabase
       .from("matches")
@@ -63,7 +63,9 @@ export default async function LeaderboardPage() {
 
   const rows = buildLeaderboard(scores ?? [], profiles ?? [], teams ?? [], user.id);
   const myTeams = buildMyTeams(state?.my_team_ids ?? [], state?.board ?? [], standings ?? []);
-  const strip = buildMatchStrip(matches ?? [], teams ?? []);
+  const strip = buildMatchStrip(matches ?? [], teams ?? [], {
+    ownership: state?.rosters ? { rosters: state.rosters, profiles: profiles ?? [] } : undefined,
+  });
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6 pb-20 lg:max-w-3xl">

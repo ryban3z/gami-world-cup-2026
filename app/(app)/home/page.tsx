@@ -42,7 +42,7 @@ export default async function HomePage({
     supabase.from("profiles").select("display_name").eq("id", user.id).single(),
     supabase
       .from("profiles")
-      .select("id, display_name")
+      .select("id, display_name, avatar_url")
       .order("created_at", { ascending: true }),
     supabase
       .from("game_config")
@@ -87,7 +87,11 @@ export default async function HomePage({
   // Recent/upcoming match strip — live phases only. Shows the last 5 results
   // and next 5 fixtures; the full strip stays on /leaderboard.
   const strip = revealed
-    ? buildMatchStrip(matches ?? [], teams ?? [], { recent: 5, upcoming: 5 })
+    ? buildMatchStrip(matches ?? [], teams ?? [], {
+        recent: 5,
+        upcoming: 5,
+        ownership: state?.rosters ? { rosters: state.rosters, profiles: list } : undefined,
+      })
     : null;
   // Per-team points for the roster cards (keyed `${userId}::${teamId}`).
   const rosterTeamPoints = revealed ? buildRosterTeamPoints(scores ?? []) : {};

@@ -7,6 +7,28 @@ self-contained note with enough detail to act on. Check off when done.
 
 ## Open
 
+### [x] Owner profile photos in the match strip
+
+**Where:** `lib/leaderboardView.ts` (`buildMatchStrip`) + `components/leaderboard/MatchStrip.tsx`;
+wired from `app/(app)/home/page.tsx` and `app/(app)/leaderboard/page.tsx`.
+
+**Why:** spot manager head-to-heads and upcoming clashes at a glance — show the owning manager's
+photo next to each owned team in the Recent results / Next up blocks.
+
+**Fix:** `buildMatchStrip` takes an optional `ownership: { rosters, profiles }`; resolves each
+fixture's `home_team_id`/`away_team_id` to the owning manager via `rosters` (`user_id → team_ids`)
+and adds `homeOwner`/`awayOwner: { avatarUrl, name } | null` to `MatchStripItem`. **Photo-only** —
+a badge is attached only when that manager has a non-empty `avatar_url` (no initials fallback in the
+compact strip). Both pages add `avatar_url` to their `profiles` select and pass `state.rosters`.
+`MatchStrip` renders a small `h-4 w-4 rounded-full` photo on the **outer edge** of each team's cell
+(display-only, no link) so the flag+score core stays tight. **Note:** rosters reflect group-stage
+ownership; once knockout re-allocation ships, knockout fixtures would still show the group owner.
+
+**Test:** `lib/leaderboardView.test.ts` extended (owner resolved with photo, null without photo /
+unowned / no ownership); verified via `npm test` + `npx tsc --noEmit` + `npm run build`.
+
+---
+
 ### [x] Pull "Recent results" + "Next up" onto the home page
 
 **Where:** `app/(app)/home/page.tsx`. Reuse the already-built `components/leaderboard/MatchStrip.tsx`

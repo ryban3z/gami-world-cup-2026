@@ -1,5 +1,19 @@
-import type { MatchStripItem } from "@/lib/leaderboardView";
+import type { MatchStripItem, OwnerBadge } from "@/lib/leaderboardView";
 import LocalKickoff from "./LocalKickoff";
+
+// Small round photo of the manager who owns a team in this fixture. Sized just
+// above the flag height so head-to-heads read at a glance without crowding.
+function OwnerAvatar({ owner }: { owner: OwnerBadge }) {
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={owner.avatarUrl}
+      alt={owner.name}
+      title={owner.name}
+      className="h-4 w-4 shrink-0 rounded-full border border-glow object-cover"
+    />
+  );
+}
 
 function MatchRow({ m }: { m: MatchStripItem }) {
   const done = m.status === "final";
@@ -13,8 +27,10 @@ function MatchRow({ m }: { m: MatchStripItem }) {
       </span>
       {/* Capped width + centered so the matchup clusters in the middle of the
           card rather than stretching edge-to-edge on a wide desktop layout. */}
-      <span className="flex w-full max-w-lg items-center gap-2 text-sm">
+      <span className="flex w-full max-w-lg items-center gap-2 text-sm leading-5">
         <span className="flex min-w-0 flex-1 items-center justify-end gap-1 text-white">
+          {/* Owner photo on the outer edge — flags stay hugging the score. */}
+          {m.homeOwner && <OwnerAvatar owner={m.homeOwner} />}
           <span className="truncate">{m.homeName}</span>
           {m.homeFlag && (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -36,6 +52,7 @@ function MatchRow({ m }: { m: MatchStripItem }) {
             <img src={m.awayFlag} alt="" className="h-3 w-5 shrink-0 rounded-sm object-cover" />
           )}
           <span className="truncate">{m.awayName}</span>
+          {m.awayOwner && <OwnerAvatar owner={m.awayOwner} />}
         </span>
       </span>
     </li>

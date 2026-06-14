@@ -220,4 +220,47 @@ describe("buildMatchStrip", () => {
     );
     expect(upcoming[0]).toMatchObject({ homeName: "TBD", awayName: "Japan", stageLabel: "Round of 16" });
   });
+
+  it("leaves owners null when no ownership is supplied", () => {
+    const { upcoming } = buildMatchStrip(
+      [match("m", "scheduled", "2026-06-13T18:00:00Z")],
+      teams,
+    );
+    expect(upcoming[0].homeOwner).toBeNull();
+    expect(upcoming[0].awayOwner).toBeNull();
+  });
+
+  it("attaches an owner badge only when that manager has a photo", () => {
+    const ownership = {
+      rosters: [
+        { user_id: "u1", team_ids: ["t1"] }, // owns Argentina, has a photo
+        { user_id: "u2", team_ids: ["t2"] }, // owns Japan, no photo
+      ],
+      profiles: [
+        { id: "u1", display_name: "Ada", avatar_url: "ada.png" },
+        { id: "u2", display_name: "Bob", avatar_url: null },
+      ],
+    };
+    const { upcoming } = buildMatchStrip(
+      [match("m", "scheduled", "2026-06-13T18:00:00Z")],
+      teams,
+      { ownership },
+    );
+    expect(upcoming[0].homeOwner).toEqual({ avatarUrl: "ada.png", name: "Ada" });
+    expect(upcoming[0].awayOwner).toBeNull(); // owned, but no photo → no badge
+  });
+
+  it("leaves an unowned team's owner null and treats blank photos as none", () => {
+    const ownership = {
+      rosters: [{ user_id: "u1", team_ids: ["t2"] }], // only Japan is owned
+      profiles: [{ id: "u1", display_name: "Ada", avatar_url: "   " }],
+    };
+    const { upcoming } = buildMatchStrip(
+      [match("m", "scheduled", "2026-06-13T18:00:00Z")],
+      teams,
+      { ownership },
+    );
+    expect(upcoming[0].homeOwner).toBeNull(); // Argentina unowned
+    expect(upcoming[0].awayOwner).toBeNull(); // owned, but blank photo
+  });
 });

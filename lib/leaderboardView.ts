@@ -53,13 +53,18 @@ export interface MyTeamStatus {
   name: string; flagUrl: string | null; stageLabel: string;
   isEliminated: boolean; isChampion: boolean;
 }
+// A manager's photo + name, shown next to a team they own in the match strip.
+export interface OwnerBadge { avatarUrl: string; name: string; }
 export interface MatchStripItem {
   id: string; stageLabel: string;
-  homeName: string; homeFlag: string | null;
-  awayName: string; awayFlag: string | null;
+  homeName: string; homeFlag: string | null; homeOwner: OwnerBadge | null;
+  awayName: string; awayFlag: string | null; awayOwner: OwnerBadge | null;
   kickoffAt: string | null; homeScore: number | null; awayScore: number | null;
   status: "scheduled" | "live" | "final";
 }
+
+interface RosterLite { user_id: string; team_ids: string[]; }
+interface OwnerProfileLite { id: string; display_name: string; avatar_url: string | null; }
 
 function emptyBreakdown(): ScoreLite["breakdown"] {
   return { group: 0, knockout: 0, bonus: 0, by_team: [] };
@@ -180,7 +185,13 @@ export function buildMyTeams(
 export function buildMatchStrip(
   matches: MatchLite[],
   teams: TeamLite[],
-  opts: { recent?: number; upcoming?: number } = {},
+  opts: {
+    recent?: number;
+    upcoming?: number;
+    // Roster ownership + manager photos. Resolves each fixture's teams to the
+    // owning manager so head-to-heads/clashes are visible at a glance.
+    ownership?: { rosters: RosterLite[]; profiles: OwnerProfileLite[] };
+  } = {},
 ): { recent: MatchStripItem[]; upcoming: MatchStripItem[] } {
   const recentN = opts.recent ?? 5;
   const upcomingN = opts.upcoming ?? 5;
@@ -188,6 +199,23 @@ export function buildMatchStrip(
   // Null kickoffs (unscheduled knockout fixtures) sort to the back of both lists.
   const ms = (s: string | null, missing: number) =>
     s ? new Date(s).getTime() : missing;
+
+  // teamId → owner badge, but only for managers who actually uploaded a photo
+  // (photo-only by design — no initials fallback in the compact strip). Rosters
+  // reflect group-stage ownership; once knockout re-allocation ships, knockout
+  // fixtures would still show the group owner here.
+  const ownerByTeam = new Map<string, OwnerBadge>();
+  if (opts.ownership) {
+    const profileById = new Map(opts.ownership.profiles.map((p) => [p.id, p]));
+    for (const r of opts.ownership.rosters) {
+      const p = profileById.get(r.user_id);
+      const avatarUrl = p?.avatar_url?.trim();
+      if (!p || !avatarUrl) continue;
+      for (const teamId of r.team_ids) {
+        ownerByTeam.set(teamId, { avatarUrl, name: p.display_name });
+      }
+    }
+  }
 
   const toItem = (m: MatchLite): MatchStripItem => {
     const home = m.home_team_id ? teamById.get(m.home_team_id) : undefined;
@@ -199,8 +227,10 @@ export function buildMatchStrip(
       stageLabel,
       homeName: home?.name ?? "TBD",
       homeFlag: home?.flag_url ?? null,
+      homeOwner: (m.home_team_id && ownerByTeam.get(m.home_team_id)) || null,
       awayName: away?.name ?? "TBD",
       awayFlag: away?.flag_url ?? null,
+      awayOwner: (m.away_team_id && ownerByTeam.get(m.away_team_id)) || null,
       kickoffAt: m.kickoff_at,
       homeScore: m.home_score,
       awayScore: m.away_score,
