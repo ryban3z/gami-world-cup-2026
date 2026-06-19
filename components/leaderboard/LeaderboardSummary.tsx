@@ -12,6 +12,14 @@ export default function LeaderboardSummary({ rows }: { rows: LeaderRow[] }) {
           {top.map((r) => (
             <li key={r.userId} className="flex items-center gap-3 text-sm">
               <span className="w-5 text-center font-bold text-caption">{r.rank}</span>
+              {r.avatarUrl && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={r.avatarUrl}
+                  alt=""
+                  className="h-6 w-6 shrink-0 rounded-full border border-glow object-cover"
+                />
+              )}
               <span className={`flex-1 ${r.isSelf ? "font-bold text-white" : "text-bodytext"}`}>
                 {r.displayName}
                 {r.isSelf && <span className="ml-1 text-xs text-caption">(you)</span>}

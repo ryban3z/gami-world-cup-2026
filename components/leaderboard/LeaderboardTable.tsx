@@ -32,6 +32,14 @@ export default function LeaderboardTable({
               className={`flex w-full items-center gap-3 p-4 text-left ${pressable} ${focusRing}`}
             >
               <span className="w-6 text-center text-sm font-bold text-caption">{r.rank}</span>
+              {r.avatarUrl && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={r.avatarUrl}
+                  alt=""
+                  className="h-6 w-6 shrink-0 rounded-full border border-glow object-cover"
+                />
+              )}
               <span className="flex-1 font-bold text-white">
                 {complete && r.rank === 1 ? "🏆 " : ""}
                 {r.displayName}
