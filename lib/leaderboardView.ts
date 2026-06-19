@@ -29,7 +29,7 @@ interface ScoreLite {
     by_team: { team: string; phase: "group" | "knockout"; points: number }[];
   };
 }
-interface ProfileLite { id: string; display_name: string; }
+interface ProfileLite { id: string; display_name: string; avatar_url?: string | null; }
 interface TeamLite { id: string; name: string; flag_url: string | null; }
 interface StandingLite {
   team_id: string; furthest_stage: Stage; is_eliminated: boolean; is_champion: boolean;
@@ -46,6 +46,9 @@ export interface LeaderTeamPoints {
 }
 export interface LeaderRow {
   rank: number; userId: string; displayName: string; isSelf: boolean;
+  // Manager's profile photo, shown as a small circle next to the name. Photo-only
+  // (null when no upload) — same treatment as the match-strip owner avatar.
+  avatarUrl: string | null;
   total: number; group: number; knockout: number; bonus: number;
   byTeam: LeaderTeamPoints[];
 }
@@ -97,10 +100,12 @@ export function buildLeaderboard(
         };
       })
       .sort((a, b2) => b2.points - a.points);
+    const avatarUrl = p.avatar_url?.trim() || null;
     return {
       userId: p.id,
       displayName: p.display_name,
       isSelf: p.id === selfUserId,
+      avatarUrl,
       total: s?.total_points ?? 0,
       group: b.group,
       knockout: b.knockout,
