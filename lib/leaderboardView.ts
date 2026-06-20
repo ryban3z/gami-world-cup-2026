@@ -24,6 +24,8 @@ interface ScoreLite {
   total_points: number;
   breakdown: {
     group: number;
+    group_qualify?: number;
+    group_win?: number;
     knockout: number;
     bonus: number;
     by_team: { team: string; phase: "group" | "knockout"; points: number }[];
@@ -50,7 +52,7 @@ export interface LeaderRow {
   // Manager's profile photo, shown as a small circle next to the name. Photo-only
   // (null when no upload) — same treatment as the match-strip owner avatar.
   avatarUrl: string | null;
-  total: number; group: number; knockout: number; bonus: number;
+  total: number; group: number; groupQualify: number; groupWin: number; knockout: number; bonus: number;
   byTeam: LeaderTeamPoints[];
 }
 export interface MyTeamStatus {
@@ -71,7 +73,7 @@ interface RosterLite { user_id: string; team_ids: string[]; }
 interface OwnerProfileLite { id: string; display_name: string; avatar_url: string | null; }
 
 function emptyBreakdown(): ScoreLite["breakdown"] {
-  return { group: 0, knockout: 0, bonus: 0, by_team: [] };
+  return { group: 0, group_qualify: 0, group_win: 0, knockout: 0, bonus: 0, by_team: [] };
 }
 
 // Ranked leaderboard. One row per profile (managers with no score row score 0).
@@ -109,6 +111,8 @@ export function buildLeaderboard(
       avatarUrl,
       total: s?.total_points ?? 0,
       group: b.group,
+      groupQualify: b.group_qualify ?? 0,
+      groupWin: b.group_win ?? 0,
       knockout: b.knockout,
       bonus: b.bonus,
       byTeam,

@@ -38,6 +38,7 @@ export default async function HomePage({
     { data: matches },
     { data: bonusCategories },
     { data: myPicks },
+    { data: standings },
   ] = await Promise.all([
     supabase.from("profiles").select("display_name").eq("id", user.id).single(),
     supabase
@@ -62,6 +63,7 @@ export default async function HomePage({
       .from("bonus_predictions")
       .select("category_id, pick_value")
       .eq("user_id", user.id),
+    supabase.from("team_standings").select("team_id, qualified"),
   ]);
 
   const state = (draft as DraftState | null) ?? null;
@@ -95,6 +97,11 @@ export default async function HomePage({
     : null;
   // Per-team points for the roster cards (keyed `${userId}::${teamId}`).
   const rosterTeamPoints = revealed ? buildRosterTeamPoints(scores ?? []) : {};
+  // Teams that have clinched a knockout spot — drives the "Qualified" marker on
+  // the roster cards (same flag as the leaderboard "My teams" panel).
+  const qualifiedTeamIds = revealed
+    ? new Set((standings ?? []).filter((s) => s.qualified).map((s) => s.team_id))
+    : new Set<string>();
 
   // Bonus-predictions CTA: while the window is open, nudge hard if picks are
   // incomplete (filled urgent button) or confirm with a tick if done. Once
@@ -180,6 +187,7 @@ export default async function HomePage({
             board={state.board}
             profilesUnlocked={profilesUnlocked}
             teamPoints={rosterTeamPoints}
+            qualifiedTeamIds={qualifiedTeamIds}
           />
         </section>
       )}

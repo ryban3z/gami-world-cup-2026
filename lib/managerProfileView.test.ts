@@ -33,6 +33,8 @@ function base(overrides: Partial<ManagerProfileInput> = {}): ManagerProfileInput
       total_points: 14,
       breakdown: {
         group: 6,
+        group_qualify: 4,
+        group_win: 2,
         knockout: 5,
         bonus: 3,
         by_team: [
@@ -129,6 +131,8 @@ describe("buildManagerProfileView — points", () => {
     expect(buildManagerProfileView(base()).points).toEqual({
       total: 14,
       group: 6,
+      groupQualify: 4,
+      groupWin: 2,
       knockout: 5,
       bonus: 3,
     });
@@ -141,7 +145,7 @@ describe("buildManagerProfileView — points", () => {
   });
   it("defaults to all zeros when the manager has no score row", () => {
     const v = buildManagerProfileView(base({ score: null }));
-    expect(v.points).toEqual({ total: 0, group: 0, knockout: 0, bonus: 0 });
+    expect(v.points).toEqual({ total: 0, group: 0, groupQualify: 0, groupWin: 0, knockout: 0, bonus: 0 });
     expect(v.teams.every((t) => t.points === 0)).toBe(true);
   });
 });

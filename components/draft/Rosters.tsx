@@ -10,11 +10,13 @@ export default function Rosters({
   board,
   profilesUnlocked = false,
   teamPoints = {},
+  qualifiedTeamIds,
 }: {
   rosters: Roster[];
   board: BoardTeam[];
   profilesUnlocked?: boolean;
   teamPoints?: Record<string, number>; // `${userId}::${teamId}` → points so far
+  qualifiedTeamIds?: Set<string>; // teams that have clinched a knockout spot
 }) {
   const byId = new Map(board.map((t) => [t.id, t]));
   return (
@@ -29,6 +31,7 @@ export default function Rosters({
               {r.team_ids.map((id) => {
                 const t = byId.get(id);
                 const pts = teamPoints[`${r.user_id}::${id}`] ?? 0;
+                const qualified = qualifiedTeamIds?.has(id) ?? false;
                 return (
                   <li key={id} className="flex items-center gap-2 text-sm text-white">
                     {t?.flag_url && (
@@ -36,6 +39,14 @@ export default function Rosters({
                       <img src={t.flag_url} alt="" className="h-4 w-6 rounded-sm object-cover" />
                     )}
                     <span className="truncate">{t?.name ?? "—"}</span>
+                    {qualified && (
+                      <span
+                        title="Qualified for the knockouts"
+                        className="shrink-0 rounded-full border border-green-400/50 px-1.5 text-[10px] font-bold uppercase text-green-300"
+                      >
+                        ✓ Q
+                      </span>
+                    )}
                     <span className="ml-auto shrink-0 text-caption">{pts} pts</span>
                   </li>
                 );
