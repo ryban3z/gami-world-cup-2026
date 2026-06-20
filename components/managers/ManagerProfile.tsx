@@ -44,9 +44,10 @@ export default function ManagerProfile({ view }: { view: ManagerProfileView }) {
           <h2 className="text-sm font-bold uppercase tracking-wide text-caption">Total points</h2>
           <span className="text-3xl font-bold text-gold">{points.total}</span>
         </div>
-        <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <dl className="mt-3 grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
           {[
-            { label: "Group", value: points.group },
+            { label: "Qualify", value: points.groupQualify },
+            { label: "Wins", value: points.groupWin },
             { label: "Knockout", value: points.knockout },
             { label: "Bonus", value: points.bonus },
           ].map((b) => (

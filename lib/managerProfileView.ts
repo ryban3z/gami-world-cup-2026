@@ -29,6 +29,8 @@ interface ScoreLite {
   total_points: number;
   breakdown: {
     group: number;
+    group_qualify?: number;
+    group_win?: number;
     knockout: number;
     bonus: number;
     by_team: { team: string; phase: "group" | "knockout"; points: number }[];
@@ -58,6 +60,8 @@ export interface ProfileTeam {
 export interface ManagerPoints {
   total: number;
   group: number;
+  groupQualify: number;
+  groupWin: number;
   knockout: number;
   bonus: number;
 }
@@ -125,6 +129,8 @@ export function buildManagerProfileView(input: ManagerProfileInput): ManagerProf
   const points: ManagerPoints = {
     total: score?.total_points ?? 0,
     group: score?.breakdown.group ?? 0,
+    groupQualify: score?.breakdown.group_qualify ?? 0,
+    groupWin: score?.breakdown.group_win ?? 0,
     knockout: score?.breakdown.knockout ?? 0,
     bonus: score?.breakdown.bonus ?? 0,
   };

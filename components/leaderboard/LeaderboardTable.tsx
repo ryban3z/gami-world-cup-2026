@@ -3,8 +3,8 @@ import { useState } from "react";
 import type { LeaderRow } from "@/lib/leaderboardView";
 import { pressable, focusRing } from "@/lib/ui";
 
-// Ranked leaderboard. Tapping a row toggles its score breakdown (group/knockout/
-// bonus totals + per-team points). The viewer's own row is gold-bordered; the
+// Ranked leaderboard. Tapping a row toggles its score breakdown (qualify/wins/
+// knockout/bonus totals + per-team points). The viewer's own row is gold-bordered; the
 // leader gets a 🏆 once the tournament is complete.
 export default function LeaderboardTable({
   rows,
@@ -51,8 +51,9 @@ export default function LeaderboardTable({
 
             {open && (
               <div className="border-t border-glow px-4 py-3 text-sm">
-                <div className="mb-2 flex gap-4 text-caption">
-                  <span>Group <strong className="text-white">{r.group}</strong></span>
+                <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-caption">
+                  <span>Qualify <strong className="text-white">{r.groupQualify}</strong></span>
+                  <span>Wins <strong className="text-white">{r.groupWin}</strong></span>
                   <span>Knockout <strong className="text-white">{r.knockout}</strong></span>
                   <span>Bonus <strong className="text-white">{r.bonus}</strong></span>
                 </div>

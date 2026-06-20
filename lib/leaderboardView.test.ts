@@ -78,13 +78,14 @@ describe("buildLeaderboard", () => {
 
   it("copies group/knockout/bonus split from the breakdown", () => {
     const rows = buildLeaderboard(
-      [score("u1", 12, [], { group: 5, knockout: 4, bonus: 3 })],
+      [score("u1", 12, [], { group: 5, group_qualify: 4, group_win: 1, knockout: 4, bonus: 3 })],
       profiles,
       teams,
       "u1",
     );
     const ada = rows.find((r) => r.displayName === "Ada")!;
     expect([ada.group, ada.knockout, ada.bonus]).toEqual([5, 4, 3]);
+    expect([ada.groupQualify, ada.groupWin]).toEqual([4, 1]);
   });
 });
 

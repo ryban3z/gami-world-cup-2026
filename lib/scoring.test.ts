@@ -84,6 +84,20 @@ describe("deriveGroupQualified", () => {
     const noLetter = [M({ stage: "group", home_team_id: "X", away_team_id: "Y", winner_team_id: "X", status: "final" })];
     expect(deriveGroupQualified(noLetter).size).toBe(0);
   });
+
+  it("clinches a leader whose two chasers still have to play each other", () => {
+    // Group D shape (USA case): US 6pts w/ 1 to play; PAR & AUS both on 3 and
+    // face each other, so they can't both reach 6 — US is guaranteed top 2.
+    const d = [
+      groupGame("US", "PAR", "US"),     // matchday 1
+      groupGame("AUS", "TUR", "AUS"),
+      groupGame("US", "AUS", "US"),     // matchday 2
+      groupGame("PAR", "TUR", "PAR"),
+      groupGame("US", "TUR", null, "scheduled"),  // matchday 3 (to play)
+      groupGame("PAR", "AUS", null, "scheduled"), // chasers meet
+    ];
+    expect(deriveGroupQualified(d).has("US")).toBe(true);
+  });
 });
 
 const config = { group_qualify_pts: 4, group_win_pts: 1, bonus_correct_pts: 4, champion_pts: 6 };
@@ -165,7 +179,10 @@ describe("computeScores — group-stage win points", () => {
       M({ stage: "group", winner_team_id: null, status: "final" }), // draw — no points
       M({ stage: "group", winner_team_id: "A", status: "scheduled" }), // not played — no points
     ];
-    expect(run({ matches: ms, standings: deriveStandings(ms) }).breakdown.group).toBe(2);
+    const s = run({ matches: ms, standings: deriveStandings(ms) });
+    expect(s.breakdown.group).toBe(2);
+    expect(s.breakdown.group_win).toBe(2);
+    expect(s.breakdown.group_qualify).toBe(0);
   });
 
   it("merges qualify + win points into a single by_team line", () => {
@@ -176,9 +193,11 @@ describe("computeScores — group-stage win points", () => {
     ];
     const s = run({ matches: ms, standings: deriveStandings(ms) });
     expect(s.breakdown.group).toBe(4 + 2); // qualify 4 + 2 wins
+    expect(s.breakdown.group_qualify).toBe(4);
+    expect(s.breakdown.group_win).toBe(2);
     const aGroup = s.breakdown.by_team.filter((t) => t.team === "A" && t.phase === "group");
     expect(aGroup).toHaveLength(1);
-    expect(aGroup[0].points).toBe(6);
+    expect(aGroup[0].points).toBe(6); // still a single merged per-team line
   });
 
   it("ignores group wins by undrafted teams", () => {
@@ -206,5 +225,7 @@ describe("computeScores — group-stage win points", () => {
       standings: deriveStandings(clinchedGroupA),
     });
     expect(s.breakdown.group).toBe(2 + 4);
+    expect(s.breakdown.group_qualify).toBe(4);
+    expect(s.breakdown.group_win).toBe(2);
   });
 });
