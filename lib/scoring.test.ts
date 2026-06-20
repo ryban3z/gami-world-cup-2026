@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  normalizeAnswer, deriveStandings, computeScores,
+  normalizeAnswer, deriveStandings, deriveGroupQualified, computeScores,
   type MatchRow, type ComputeInput,
 } from "@/lib/scoring";
 
@@ -16,7 +16,7 @@ describe("normalizeAnswer", () => {
 // Bracket: A,B reach final (A champion); C,D reach SF (C plays 3rd place);
 // E,F reach QF; G reaches R16; H,I,J,K qualify (R32) but lose; Z undrafted qualifier.
 const M = (o: Partial<MatchRow>): MatchRow => ({
-  external_id: "x", stage: "group", home_team_id: null, away_team_id: null,
+  external_id: "x", stage: "group", group_letter: null, home_team_id: null, away_team_id: null,
   winner_team_id: null, status: "scheduled", ...o,
 });
 const matches: MatchRow[] = [
@@ -47,6 +47,42 @@ describe("deriveStandings", () => {
   it("R32 appearance counts as qualified even if not yet played", () => {
     expect(byId["Z"].furthest_stage).toBe("r32"); // undrafted but qualified
     expect(byId["J"].furthest_stage).toBe("r32");
+  });
+});
+
+// A complete Group A bar GA's last game: GA & GD have clinched the top two
+// (GA 6pts + 1 to play; GD 6pts; GB 3; GC 0) — neither can be caught for a
+// top-2 spot regardless of GA's final result.
+const groupGame = (home: string, away: string, winner: string | null, status: MatchRow["status"] = "final") =>
+  M({ stage: "group", group_letter: "A", home_team_id: home, away_team_id: away, winner_team_id: winner, status });
+const clinchedGroupA: MatchRow[] = [
+  groupGame("GA", "GB", "GA"),
+  groupGame("GA", "GC", "GA"),
+  groupGame("GB", "GC", "GB"),
+  groupGame("GD", "GB", "GD"),
+  groupGame("GD", "GC", "GD"),
+  groupGame("GA", "GD", null, "scheduled"), // GA's last game still to play
+];
+
+describe("deriveGroupQualified", () => {
+  it("marks teams mathematically guaranteed a top-2 finish", () => {
+    expect([...deriveGroupQualified(clinchedGroupA)].sort()).toEqual(["GA", "GD"]);
+  });
+  it("nobody clinches early — too many teams can still catch up", () => {
+    // Full round-robin seeded up front (as the app does); only matchday 1 played.
+    const early = [
+      groupGame("GA", "GB", "GA"),
+      groupGame("GC", "GD", "GC"),
+      groupGame("GA", "GC", null, "scheduled"),
+      groupGame("GA", "GD", null, "scheduled"),
+      groupGame("GB", "GC", null, "scheduled"),
+      groupGame("GB", "GD", null, "scheduled"),
+    ];
+    expect(deriveGroupQualified(early).size).toBe(0);
+  });
+  it("ignores group matches with no group_letter", () => {
+    const noLetter = [M({ stage: "group", home_team_id: "X", away_team_id: "Y", winner_team_id: "X", status: "final" })];
+    expect(deriveGroupQualified(noLetter).size).toBe(0);
   });
 });
 
@@ -160,5 +196,15 @@ describe("computeScores — group-stage win points", () => {
     const s = run({ matches: ms, standings: deriveStandings(ms), config: { ...config, group_win_pts: 0 } });
     expect(s.breakdown.group).toBe(0);
     expect(s.breakdown.by_team).toHaveLength(0);
+  });
+
+  it("credits the qualify reward once a team clinches, before any R32 fixture", () => {
+    // GA owns no R32 row yet but has clinched top-2: 2 group wins (2) + qualify (4).
+    const s = run({
+      ownership: [{ user_id: "u1", team_id: "GA", phase: "group" }],
+      matches: clinchedGroupA,
+      standings: deriveStandings(clinchedGroupA),
+    });
+    expect(s.breakdown.group).toBe(2 + 4);
   });
 });

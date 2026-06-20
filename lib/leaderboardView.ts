@@ -33,6 +33,7 @@ interface ProfileLite { id: string; display_name: string; avatar_url?: string | 
 interface TeamLite { id: string; name: string; flag_url: string | null; }
 interface StandingLite {
   team_id: string; furthest_stage: Stage; is_eliminated: boolean; is_champion: boolean;
+  qualified: boolean;
 }
 interface MatchLite {
   id: string; stage: Stage; group_letter: string | null;
@@ -54,7 +55,7 @@ export interface LeaderRow {
 }
 export interface MyTeamStatus {
   name: string; flagUrl: string | null; stageLabel: string;
-  isEliminated: boolean; isChampion: boolean;
+  isEliminated: boolean; isChampion: boolean; isQualified: boolean;
 }
 // A manager's photo + name, shown next to a team they own in the match strip.
 export interface OwnerBadge { avatarUrl: string; name: string; }
@@ -158,17 +159,23 @@ export function buildMyTeams(
     const stage: Stage = s?.furthest_stage ?? "group";
     const isChampion = s?.is_champion ?? false;
     const isEliminated = s?.is_eliminated ?? false;
+    // "Qualified" surfaces only while still in the group stage — once an R32
+    // fixture exists the stage label (Round of 32, …) already says as much.
+    const isQualified = (s?.qualified ?? false) && stage === "group" && !isEliminated;
     const stageLabel = isChampion
       ? "Champion"
       : isEliminated
         ? "Eliminated"
-        : STAGE_LABELS[stage];
+        : isQualified
+          ? "Qualified"
+          : STAGE_LABELS[stage];
     const status: MyTeamStatus = {
       name: t?.name ?? "—",
       flagUrl: t?.flag_url ?? null,
       stageLabel,
       isEliminated,
       isChampion,
+      isQualified,
     };
     // bucket: champion(0) < alive(1) < eliminated(2)
     const bucket = isChampion ? 0 : isEliminated ? 2 : 1;

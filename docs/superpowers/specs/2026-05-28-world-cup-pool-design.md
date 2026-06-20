@@ -121,6 +121,8 @@ Exact games, format, and point values are **TBD** — captured here as a directi
 | Each group-stage win | 1 |
 | Qualifies out of group (reaches Round of 32) | 4 |
 
+> **Early-clinch qualify credit (added 2026-06-20, migration `0029`):** the qualify reward is now credited as soon as a team **mathematically clinches a top-2 group finish** — `deriveGroupQualified` in `lib/scoring.ts` builds each group's table from finished group matches and marks a team qualified once at most one other team in its group can still reach its current points (guaranteed 1st/2nd regardless of remaining results). This no longer waits for the R32 bracket to be populated. It's sound by construction (only marks teams that can't drop below 2nd, so it never over-awards); the **8 best-3rd-placed** qualifiers still can't be known until every group finishes, so they keep being credited later when their R32 fixture appears (the `furthest_stage ≥ r32` path). Surfaced as a `team_standings.qualified` flag and a green **"Qualified"** badge on the dashboard's "My teams" panel. Recalc is idempotent, so applying mid-stage credits clinched teams retroactively.
+
 > **Group-win points (added 2026-06-13, seed `0028`):** each finished group-stage win earns 1 point for the team's `phase='group'` owner, and the qualify reward was shaded 5 → 4 to compensate. Motivation: the leaderboard stays flat for the whole group stage if qualifying is the only group reward; per-win points move it from matchday one and reward strong picks earlier. A draw scores nothing. `group_win_pts` is a tunable `scoring_config` column (migration `0027`, default 0 = inert). Recalc is idempotent, so applying mid-stage credits already-played group matches retroactively.
 
 **Knockout reward → knockout owner (per team, by furthest stage reached):**
@@ -334,6 +336,7 @@ create table team_standings (
   furthest_stage match_stage not null default 'group',
   is_eliminated  boolean not null default false,
   is_champion    boolean not null default false,
+  qualified      boolean not null default false,  -- clinched a knockout spot (migration 0029)
   updated_at     timestamptz not null default now()
 );
 

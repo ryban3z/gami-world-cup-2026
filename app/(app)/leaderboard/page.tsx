@@ -52,7 +52,7 @@ export default async function LeaderboardPage() {
   ] = await Promise.all([
     supabase.from("scores").select("user_id, total_points, breakdown"),
     supabase.from("profiles").select("id, display_name, avatar_url"),
-    supabase.from("team_standings").select("team_id, furthest_stage, is_eliminated, is_champion"),
+    supabase.from("team_standings").select("team_id, furthest_stage, is_eliminated, is_champion, qualified"),
     supabase
       .from("matches")
       .select(

@@ -1,7 +1,8 @@
 import type { MyTeamStatus } from "@/lib/leaderboardView";
 
 // The viewer's teams with a status badge: gold for champion, red for eliminated,
-// neutral for still-alive (showing the furthest stage reached).
+// green for a clinched group qualification, neutral for still-alive (showing the
+// furthest stage reached).
 export default function MyTeamsPanel({ teams }: { teams: MyTeamStatus[] }) {
   if (teams.length === 0) return null;
   return (
@@ -21,7 +22,9 @@ export default function MyTeamsPanel({ teams }: { teams: MyTeamStatus[] }) {
                   ? "bg-gold text-navy"
                   : t.isEliminated
                     ? "border border-red-400/50 text-red-300"
-                    : "border border-glow text-caption"
+                    : t.isQualified
+                      ? "border border-green-400/50 text-green-300"
+                      : "border border-glow text-caption"
               }`}
             >
               {t.stageLabel}
