@@ -62,6 +62,9 @@ The landing page runs with no backend. The core app (gate + auth + data) needs a
    22. `supabase/seed/0024_chicken_flavours.sql` — the per-manager chicken orders (idempotent `update`s keyed by `display_name`; see the note on step 21).
    23. `supabase/migrations/0025_override_winner.sql` — penalties-aware match override (replaces the `0013` RPC; the override can now record a shootout winner on a level knockout result). **Apply with (or before) deploying the matching app code** — the admin override form passes the new argument.
    24. `supabase/seed/0026_manager_one_liners.sql` — simplified one-line manager bios (supersedes the `0020` blurbs; idempotent `update`s keyed by `display_name`).
+   25. `supabase/migrations/0027_group_win_points.sql` — adds the tunable `scoring_config.group_win_pts` column (default 0 = inert until `0028` sets it).
+   26. `supabase/seed/0028_group_win_tune.sql` — sets group-win points to 1 and shades the qualify reward 5 → 4. Apply before/at kickoff; recalc is idempotent.
+   27. `supabase/migrations/0029_team_standings_qualified.sql` — adds `team_standings.qualified` so the dashboard can badge a team "Qualified" the moment it clinches a top-2 group finish (before the R32 bracket exists). Derived/idempotent — apply, then re-run recalc (admin → Manual refresh) to backfill.
 4. **Disable email confirmation:** Supabase → Authentication → Sign In / Providers → Email → turn **off "Confirm email"** (so friends can register and log in immediately without an SMTP setup).
 5. **Make yourself admin** (after registering): in the SQL Editor, run
    `update profiles set is_admin = true where display_name = '<your name>';`

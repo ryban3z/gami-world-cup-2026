@@ -11,7 +11,7 @@ type DB = ReturnType<typeof createServiceClient>;
 
 export async function runRecalc(db: DB = createServiceClient()) {
   const [matchesQ, ownershipQ, catsQ, predsQ, rulesQ, cfgQ, profilesQ] = await Promise.all([
-    db.from("matches").select("external_id, stage, home_team_id, away_team_id, winner_team_id, status"),
+    db.from("matches").select("external_id, stage, group_letter, home_team_id, away_team_id, winner_team_id, status"),
     db.from("team_ownership").select("user_id, team_id, phase"),
     db.from("bonus_categories").select("id, key, resolved_answer"),
     db.from("bonus_predictions").select("user_id, category_id, pick_value").eq("is_active", true),

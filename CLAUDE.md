@@ -46,6 +46,8 @@ These are the non-obvious invariants the whole app is built around. Preserve the
 
 - **Scoring is split by ownership phase.** Qualifying out of the group rewards the `phase='group'` owner; the knockout run rewards the `phase='knockout'` owner. This split is what keeps the post-group team swap fair — respect it in any scoring code.
 
+- **Group qualification is credited on mathematical clinch, not just R32 appearance.** `deriveGroupQualified` (`lib/scoring.ts`) marks a team `qualified` once it's guaranteed a top-2 group finish (≤1 other team in its group can still catch its current points), so the qualify reward + a `team_standings.qualified` flag (→ green "Qualified" badge on the dashboard) land mid-group-stage. The 8 best-3rd-placed qualifiers are credited later via the `furthest_stage ≥ r32` path. It assumes the full group fixture list exists as `scheduled` rows (the seed guarantees this) to count remaining games. Migration `0029`.
+
 - **`scores` and `team_standings` are derived data.** They must be fully rebuildable from `team_ownership` + `matches` + `bonus_predictions`. Recalculation **recomputes from scratch (idempotent); never increment.**
 
 - **The wildcard is a replacement, not a separate entity.** It's modeled as a new `bonus_predictions` row with the old one marked inactive and linked via `superseded_by`. One use per player (`profiles.wildcard_used_at`).

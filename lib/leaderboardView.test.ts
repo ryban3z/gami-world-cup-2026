@@ -127,13 +127,23 @@ describe("buildMyTeams", () => {
       ["t1", "t2", "t3"],
       board,
       [
-        { team_id: "t1", furthest_stage: "final", is_eliminated: false, is_champion: true },
-        { team_id: "t2", furthest_stage: "r16", is_eliminated: true, is_champion: false },
-        { team_id: "t3", furthest_stage: "qf", is_eliminated: false, is_champion: false },
+        { team_id: "t1", furthest_stage: "final", is_eliminated: false, is_champion: true, qualified: true },
+        { team_id: "t2", furthest_stage: "r16", is_eliminated: true, is_champion: false, qualified: true },
+        { team_id: "t3", furthest_stage: "qf", is_eliminated: false, is_champion: false, qualified: true },
       ],
     );
     const byName = Object.fromEntries(out.map((t) => [t.name, t.stageLabel]));
     expect(byName).toEqual({ Argentina: "Champion", USA: "Quarter-final", Japan: "Eliminated" });
+  });
+
+  it("labels a clinched group-stage team Qualified (green badge)", () => {
+    const out = buildMyTeams(
+      ["t3"],
+      board,
+      [{ team_id: "t3", furthest_stage: "group", is_eliminated: false, is_champion: false, qualified: true }],
+    );
+    expect(out[0].stageLabel).toBe("Qualified");
+    expect(out[0].isQualified).toBe(true);
   });
 
   it("orders champion first, then alive (deepest first), eliminated last", () => {
@@ -141,10 +151,10 @@ describe("buildMyTeams", () => {
       ["t2", "t3", "t1", "t4"],
       board,
       [
-        { team_id: "t1", furthest_stage: "final", is_eliminated: false, is_champion: true },
-        { team_id: "t2", furthest_stage: "group", is_eliminated: true, is_champion: false },
-        { team_id: "t3", furthest_stage: "qf", is_eliminated: false, is_champion: false },
-        { team_id: "t4", furthest_stage: "r16", is_eliminated: false, is_champion: false },
+        { team_id: "t1", furthest_stage: "final", is_eliminated: false, is_champion: true, qualified: true },
+        { team_id: "t2", furthest_stage: "group", is_eliminated: true, is_champion: false, qualified: false },
+        { team_id: "t3", furthest_stage: "qf", is_eliminated: false, is_champion: false, qualified: true },
+        { team_id: "t4", furthest_stage: "r16", is_eliminated: false, is_champion: false, qualified: true },
       ],
     );
     expect(out.map((t) => t.name)).toEqual(["Argentina", "USA", "Brazil", "Japan"]);
@@ -153,7 +163,8 @@ describe("buildMyTeams", () => {
   it("defaults a team with no standing row to Group / alive", () => {
     const out = buildMyTeams(["t3"], board, []);
     expect(out[0]).toEqual({
-      name: "USA", flagUrl: null, stageLabel: "Group", isEliminated: false, isChampion: false,
+      name: "USA", flagUrl: null, stageLabel: "Group",
+      isEliminated: false, isChampion: false, isQualified: false,
     });
   });
 });

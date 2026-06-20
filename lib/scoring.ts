@@ -15,6 +15,7 @@ const STAGE_RANK: Record<MatchStage, number> = {
 export interface MatchRow {
   external_id: string;
   stage: MatchStage;
+  group_letter: string | null;
   home_team_id: string | null;
   away_team_id: string | null;
   winner_team_id: string | null;
@@ -26,6 +27,9 @@ export interface StandingRow {
   furthest_stage: MatchStage;
   is_eliminated: boolean;
   is_champion: boolean;
+  // Clinched a knockout spot: either mathematically guaranteed a top-2 group
+  // finish (see deriveGroupQualified) or already drawn into an R32 fixture.
+  qualified: boolean;
 }
 
 export function normalizeAnswer(s: string): string {
@@ -38,7 +42,60 @@ export function normalizeAnswer(s: string): string {
     .replace(/\s+/g, " ");
 }
 
+// A team has clinched a top-2 group finish — and therefore qualification — once
+// at most one other team in its group can still reach its current points total.
+// That makes it mathematically guaranteed to finish 1st or 2nd no matter how the
+// remaining group games go, so the qualify reward can be credited mid-group-stage,
+// before the R32 bracket is populated. Sound by construction: a team is only
+// marked when it cannot be pushed below 2nd, so it never over-awards. (The 8
+// best-3rd-placed qualifiers can't be known until every group finishes; they get
+// credited later when their R32 fixture appears — see deriveStandings.)
+//
+// Assumes the full group fixture list is present (unplayed games as `scheduled`
+// rows), which the seed guarantees — "remaining games" is counted from them.
+export function deriveGroupQualified(matches: MatchRow[]): Set<string> {
+  // group_letter → team_id → { points so far, remaining group games }
+  const groups = new Map<string, Map<string, { pts: number; remaining: number }>>();
+  const team = (letter: string, id: string) => {
+    let g = groups.get(letter);
+    if (!g) { g = new Map(); groups.set(letter, g); }
+    let t = g.get(id);
+    if (!t) { t = { pts: 0, remaining: 0 }; g.set(id, t); }
+    return t;
+  };
+
+  for (const m of matches) {
+    if (m.stage !== "group" || !m.group_letter) continue;
+    for (const id of [m.home_team_id, m.away_team_id]) {
+      if (!id) continue;
+      const t = team(m.group_letter, id);
+      if (m.status === "final") {
+        if (m.winner_team_id === id) t.pts += 3;       // win
+        else if (m.winner_team_id === null) t.pts += 1; // draw (no recorded winner)
+        // loss → 0
+      } else {
+        t.remaining += 1;
+      }
+    }
+  }
+
+  const qualified = new Set<string>();
+  for (const g of groups.values()) {
+    for (const [id, { pts: floor }] of g) {
+      // Floor = current points (worst case: lose every remaining game). Count the
+      // other teams whose ceiling can still reach that floor; ≤1 ⇒ guaranteed top 2.
+      let canCatch = 0;
+      for (const [other, o] of g) {
+        if (other !== id && o.pts + 3 * o.remaining >= floor) canCatch += 1;
+      }
+      if (canCatch <= 1) qualified.add(id);
+    }
+  }
+  return qualified;
+}
+
 export function deriveStandings(matches: MatchRow[]): StandingRow[] {
+  const groupQualified = deriveGroupQualified(matches);
   const acc = new Map<string, { stage: MatchStage; match: MatchRow }>();
   const championOf = (m: MatchRow) =>
     m.stage === "final" && m.status === "final" ? m.winner_team_id : null;
@@ -65,7 +122,9 @@ export function deriveStandings(matches: MatchRow[]): StandingRow[] {
       stage !== "group" &&
       match.status === "final" &&
       match.winner_team_id !== team_id;
-    rows.push({ team_id, furthest_stage: stage, is_eliminated, is_champion });
+    const qualified =
+      groupQualified.has(team_id) || STAGE_RANK[stage] >= STAGE_RANK["r32"];
+    rows.push({ team_id, furthest_stage: stage, is_eliminated, is_champion, qualified });
   }
   return rows;
 }
@@ -153,8 +212,9 @@ export function computeScores(input: ComputeInput): ComputedScore[] {
   };
 
   for (const s of standings) {
-    const qualified = STAGE_RANK[s.furthest_stage] >= STAGE_RANK["r32"];
-    if (qualified) addGroupPts(s.team_id, config.group_qualify_pts);
+    // qualified covers both a clinched top-2 group finish and an R32-bracket
+    // appearance (best-3rd qualifiers) — see deriveStandings / deriveGroupQualified.
+    if (s.qualified) addGroupPts(s.team_id, config.group_qualify_pts);
 
     const ladderPts = (ladder.get(s.furthest_stage) ?? 0) + (s.is_champion ? config.champion_pts : 0);
     if (ladderPts > 0) {
