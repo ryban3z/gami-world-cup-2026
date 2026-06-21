@@ -91,7 +91,7 @@ export default async function LeaderboardPage() {
       </header>
       <LeaderboardTable rows={rows} complete={phase === "complete"} />
       <MyTeamsPanel teams={myTeams} />
-      <TopScorers rows={topScorers} />
+      <TopScorers rows={topScorers} href="/predictions/status" />
       <MatchStrip recent={strip.recent} upcoming={strip.upcoming} />
     </main>
   );

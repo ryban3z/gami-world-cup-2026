@@ -1,9 +1,12 @@
+import Link from "next/link";
+import { pressable } from "@/lib/ui";
 import type { TopScorerRow } from "@/lib/topScorersView";
 
 // Golden Boot race — the tournament's top scorers, pulled live from
 // football-data.org. Read-only colour (not a scoring input). `compact` trims to a
 // tighter list for the home summary (no team name / penalty detail); the full
-// card with those extras lives on /leaderboard.
+// card with those extras lives on /leaderboard. `href`, when set, makes the whole
+// card a tappable link to the bonus tracker.
 function ScorerRow({ s, compact }: { s: TopScorerRow; compact: boolean }) {
   return (
     <li className="flex items-center gap-2 py-1.5 text-sm leading-5">
@@ -30,13 +33,18 @@ function ScorerRow({ s, compact }: { s: TopScorerRow; compact: boolean }) {
 export default function TopScorers({
   rows,
   compact = false,
+  href,
 }: {
   rows: TopScorerRow[];
   compact?: boolean;
+  href?: string;
 }) {
-  return (
-    <section className="rounded-xl border border-glow bg-panel p-4">
-      <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-caption">Golden Boot race</h2>
+  const body = (
+    <>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-caption">Golden Boot race</h2>
+        {href && <span className="shrink-0 text-xs font-bold text-gold">Tracker →</span>}
+      </div>
       {rows.length > 0 ? (
         <ul className="flex flex-col">
           {rows.map((s) => <ScorerRow key={`${s.rank}-${s.playerName}`} s={s} compact={compact} />)}
@@ -44,6 +52,15 @@ export default function TopScorers({
       ) : (
         <p className="text-sm text-caption">No goals yet.</p>
       )}
-    </section>
+    </>
+  );
+
+  const card = "rounded-xl border border-glow bg-panel p-4";
+  return href ? (
+    <Link href={href} className={`block ${card} ${pressable}`}>
+      {body}
+    </Link>
+  ) : (
+    <section className={card}>{body}</section>
   );
 }
