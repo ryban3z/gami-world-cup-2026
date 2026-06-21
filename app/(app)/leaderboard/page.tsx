@@ -4,9 +4,12 @@ import { branding } from "@/lib/config";
 import { pressableLink } from "@/lib/ui";
 import type { DraftState } from "@/components/draft/DraftStatus";
 import { buildLeaderboard, buildMyTeams, buildMatchStrip } from "@/lib/leaderboardView";
+import { buildTopScorers, type TopScorerRow } from "@/lib/topScorersView";
+import { fetchWcScorers } from "@/lib/footballData";
 import LeaderboardTable from "@/components/leaderboard/LeaderboardTable";
 import MyTeamsPanel from "@/components/leaderboard/MyTeamsPanel";
 import MatchStrip from "@/components/leaderboard/MatchStrip";
+import TopScorers from "@/components/leaderboard/TopScorers";
 
 export const dynamic = "force-dynamic"; // always reflect live scores
 
@@ -58,7 +61,7 @@ export default async function LeaderboardPage() {
       .select(
         "id, stage, group_letter, home_team_id, away_team_id, kickoff_at, home_score, away_score, winner_team_id, status",
       ),
-    supabase.from("teams").select("id, name, flag_url"),
+    supabase.from("teams").select("id, name, flag_url, external_id"),
   ]);
 
   const rows = buildLeaderboard(scores ?? [], profiles ?? [], teams ?? [], user.id);
@@ -66,6 +69,19 @@ export default async function LeaderboardPage() {
   const strip = buildMatchStrip(matches ?? [], teams ?? [], {
     ownership: state?.rosters ? { rosters: state.rosters, profiles: profiles ?? [] } : undefined,
   });
+
+  // Live Golden Boot board. Read-only colour pulled straight from
+  // football-data.org (cached 5 min in the fetch). Guarded so a missing token or
+  // an API hiccup degrades to an empty container, never a broken dashboard.
+  let topScorers: TopScorerRow[] = [];
+  const footballDataToken = process.env.FOOTBALL_DATA_TOKEN;
+  if (footballDataToken) {
+    try {
+      topScorers = buildTopScorers(await fetchWcScorers(footballDataToken), teams ?? []);
+    } catch {
+      topScorers = [];
+    }
+  }
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6 pb-20 lg:max-w-3xl">
@@ -75,6 +91,7 @@ export default async function LeaderboardPage() {
       </header>
       <LeaderboardTable rows={rows} complete={phase === "complete"} />
       <MyTeamsPanel teams={myTeams} />
+      <TopScorers rows={topScorers} />
       <MatchStrip recent={strip.recent} upcoming={strip.upcoming} />
     </main>
   );
