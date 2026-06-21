@@ -12,7 +12,10 @@ import DraftOrderRail from "@/components/draft/DraftOrderRail";
 import MyPicks from "@/components/draft/MyPicks";
 import LeaderboardSummary from "@/components/leaderboard/LeaderboardSummary";
 import MatchStrip from "@/components/leaderboard/MatchStrip";
+import TopScorers from "@/components/leaderboard/TopScorers";
 import { buildLeaderboard, buildMatchStrip, buildRosterTeamPoints } from "@/lib/leaderboardView";
+import { buildTopScorers, type TopScorerRow } from "@/lib/topScorersView";
+import { fetchWcScorers } from "@/lib/footballData";
 import { bonusPicksComplete } from "@/lib/predictions";
 
 export const dynamic = "force-dynamic"; // always reflect live game state
@@ -52,7 +55,7 @@ export default async function HomePage({
       .single(),
     supabase.rpc("draft_state"),
     supabase.from("scores").select("user_id, total_points, breakdown"),
-    supabase.from("teams").select("id, name, flag_url"),
+    supabase.from("teams").select("id, name, flag_url, external_id"),
     supabase
       .from("matches")
       .select(
@@ -95,6 +98,19 @@ export default async function HomePage({
         ownership: state?.rosters ? { rosters: state.rosters, profiles: list } : undefined,
       })
     : null;
+  // Compact Golden Boot board — top 5, live phases only. Read-only colour from
+  // football-data.org (cached 1 hour in the fetch); the full top-10 lives on
+  // /leaderboard. Guarded so a missing token / API hiccup degrades to an empty
+  // container rather than breaking home.
+  let topScorers: TopScorerRow[] = [];
+  const footballDataToken = process.env.FOOTBALL_DATA_TOKEN;
+  if (revealed && footballDataToken) {
+    try {
+      topScorers = buildTopScorers(await fetchWcScorers(footballDataToken), teams ?? [], 5);
+    } catch {
+      topScorers = [];
+    }
+  }
   // Per-team points for the roster cards (keyed `${userId}::${teamId}`).
   const rosterTeamPoints = revealed ? buildRosterTeamPoints(scores ?? []) : {};
   // Teams that have clinched a knockout spot — drives the "Qualified" marker on
@@ -171,6 +187,8 @@ export default async function HomePage({
       )}
 
       {revealed && strip && <MatchStrip recent={strip.recent} upcoming={strip.upcoming} />}
+
+      {revealed && <TopScorers rows={topScorers} compact />}
 
       {revealed && state?.rosters && (
         <section className="flex flex-col gap-3">

@@ -130,11 +130,14 @@ export function mapApiScorer(s: ApiScorer): MappedScorer | null {
 
 // Cached (revalidate) rather than no-store: the live dashboard renders
 // dynamically and the free tier rate-limits to ~10 calls/min, so a per-viewer
-// fetch would burn the quota. 5 min is plenty fresh for a scorers board.
+// fetch would burn the quota. A scorers board barely moves within a day, let
+// alone an hour — 1 hour keeps it fresh enough while sipping the quota.
+const SCORERS_REVALIDATE_SECONDS = 3600;
+
 export async function fetchWcScorers(token: string, limit = 10): Promise<MappedScorer[]> {
   const res = await fetch(`https://api.football-data.org/v4/competitions/WC/scorers?limit=${limit}`, {
     headers: { "X-Auth-Token": token },
-    next: { revalidate: 300 },
+    next: { revalidate: SCORERS_REVALIDATE_SECONDS },
   });
   if (!res.ok) throw new Error(`football-data scorers fetch failed: ${res.status}`);
   const data = await res.json();
