@@ -22,9 +22,6 @@ function ScorerRow({ s, compact }: { s: TopScorerRow; compact: boolean }) {
       <span className="shrink-0 text-right tabular-nums">
         <span className="font-bold text-gold">{s.goals}</span>
         <span className="text-caption"> {s.goals === 1 ? "goal" : "goals"}</span>
-        {!compact && s.penalties != null && s.penalties > 0 && (
-          <span className="text-caption"> ({s.penalties} pen)</span>
-        )}
       </span>
     </li>
   );
