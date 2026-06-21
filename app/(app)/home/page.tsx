@@ -188,7 +188,7 @@ export default async function HomePage({
 
       {revealed && strip && <MatchStrip recent={strip.recent} upcoming={strip.upcoming} />}
 
-      {revealed && <TopScorers rows={topScorers} compact />}
+      {revealed && <TopScorers rows={topScorers} compact href="/predictions/status" />}
 
       {revealed && state?.rosters && (
         <section className="flex flex-col gap-3">
