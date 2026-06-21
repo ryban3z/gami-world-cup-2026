@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mapApiMatch } from "@/lib/footballData";
+import { mapApiMatch, mapApiScorer } from "@/lib/footballData";
 
 const groupMatch = {
   id: 537327, utcDate: "2026-06-11T19:00:00Z", stage: "GROUP_STAGE", group: "GROUP_A", status: "TIMED",
@@ -61,5 +61,38 @@ describe("mapApiMatch", () => {
   });
   it("returns null for an unknown stage instead of throwing", () => {
     expect(mapApiMatch({ ...knockoutTbd, stage: "PLAY_OFFS" })).toBeNull();
+  });
+});
+
+describe("mapApiScorer", () => {
+  it("maps a full scorer entry", () => {
+    expect(
+      mapApiScorer({
+        player: { name: "Kylian Mbappé" },
+        team: { id: 773, name: "France" },
+        goals: 5, assists: 2, penalties: 1, playedMatches: 4,
+      }),
+    ).toEqual({
+      playerName: "Kylian Mbappé", teamExternalId: "773", teamName: "France",
+      goals: 5, assists: 2, penalties: 1, playedMatches: 4,
+    });
+  });
+  it("keeps free-tier null assists/penalties as null (not 0)", () => {
+    const s = mapApiScorer({
+      player: { name: "Someone" }, team: { id: 1, name: "X" },
+      goals: 3, assists: null, penalties: null, playedMatches: null,
+    })!;
+    expect(s.assists).toBeNull();
+    expect(s.penalties).toBeNull();
+    expect(s.playedMatches).toBeNull();
+  });
+  it("drops entries with no name or no goal count", () => {
+    expect(mapApiScorer({ player: { name: "  " }, team: { id: 1, name: "X" }, goals: 2, assists: null, penalties: null, playedMatches: null })).toBeNull();
+    expect(mapApiScorer({ player: { name: "A" }, team: { id: 1, name: "X" }, goals: null, assists: null, penalties: null, playedMatches: null })).toBeNull();
+  });
+  it("tolerates a missing team", () => {
+    const s = mapApiScorer({ player: { name: "A" }, team: null, goals: 1, assists: null, penalties: null, playedMatches: null })!;
+    expect(s.teamExternalId).toBeNull();
+    expect(s.teamName).toBeNull();
   });
 });

@@ -84,3 +84,61 @@ export async function fetchWcMatches(token: string): Promise<ApiMatch[]> {
   const data = await res.json();
   return data.matches as ApiMatch[];
 }
+
+// --- Top scorers -----------------------------------------------------------
+// The /scorers resource is keyed by player, not by our team/match external_id
+// seam, so it's read-only colour for the dashboard — not a scoring input. The
+// free tier populates `goals` reliably but often leaves `assists`/`penalties`
+// null, hence the nullable fields below.
+
+export interface MappedScorer {
+  playerName: string;
+  // football-data's team id — maps to teams.external_id so the view can reuse
+  // our own flag_url instead of the API crest.
+  teamExternalId: string | null;
+  teamName: string | null;
+  goals: number;
+  assists: number | null;
+  penalties: number | null;
+  playedMatches: number | null;
+}
+
+interface ApiScorer {
+  player: { name: string | null } | null;
+  team: { id: number | null; name: string | null } | null;
+  goals: number | null;
+  assists: number | null;
+  penalties: number | null;
+  playedMatches: number | null;
+}
+
+// Drops entries with no player name or no goal count — they can't anchor a
+// scorers table — so one malformed row never breaks the whole list.
+export function mapApiScorer(s: ApiScorer): MappedScorer | null {
+  const playerName = s.player?.name?.trim();
+  if (!playerName || s.goals == null) return null;
+  return {
+    playerName,
+    teamExternalId: ext(s.team?.id ?? null),
+    teamName: s.team?.name ?? null,
+    goals: s.goals,
+    assists: s.assists ?? null,
+    penalties: s.penalties ?? null,
+    playedMatches: s.playedMatches ?? null,
+  };
+}
+
+// Cached (revalidate) rather than no-store: the live dashboard renders
+// dynamically and the free tier rate-limits to ~10 calls/min, so a per-viewer
+// fetch would burn the quota. 5 min is plenty fresh for a scorers board.
+export async function fetchWcScorers(token: string, limit = 10): Promise<MappedScorer[]> {
+  const res = await fetch(`https://api.football-data.org/v4/competitions/WC/scorers?limit=${limit}`, {
+    headers: { "X-Auth-Token": token },
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) throw new Error(`football-data scorers fetch failed: ${res.status}`);
+  const data = await res.json();
+  return ((data.scorers ?? []) as ApiScorer[])
+    .map(mapApiScorer)
+    .filter((s): s is MappedScorer => s !== null);
+}
