@@ -13,6 +13,8 @@ import {
   startDraft,
   adminAutopick,
   lockPredictions,
+  openKnockoutRealloc,
+  resolveKnockoutRealloc,
   refreshResults,
 } from "./actions";
 
@@ -154,6 +156,33 @@ export default async function AdminPage({
             pendingLabel="Locking…"
             confirmPrompt="Lock predictions — closes the window and reveals everyone's picks. Can't be undone. Confirm?"
             description="Closes the window and reveals all picks."
+          />
+        </section>
+      )}
+
+      {phase === "group_locked" && (
+        <section className="rounded-xl border border-gold/40 bg-panel p-4">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-gold">Knockout swap</h2>
+          <ConfirmAction
+            action={openKnockoutRealloc}
+            label="Open knockout re-allocation"
+            pendingLabel="Opening…"
+            confirmPrompt="Open the knockout swap + wildcard window. Snapshots the reverse-standings pick order from the current leaderboard. Confirm?"
+            description="Lets managers submit a blind team swap + use their wildcard."
+          />
+        </section>
+      )}
+
+      {phase === "knockout_realloc" && (
+        <section className="rounded-xl border border-gold/40 bg-panel p-4">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-gold">Knockout swap</h2>
+          <ConfirmAction
+            action={resolveKnockoutRealloc}
+            tone="danger"
+            label="Resolve & lock knockouts"
+            pendingLabel="Resolving…"
+            confirmPrompt="Close the window, auto-allocate free agents worst-placed-first, lock knockout ownership, and reveal the swaps. Can't be undone. Confirm?"
+            description="Awards each manager their top still-available pick, then locks."
           />
         </section>
       )}

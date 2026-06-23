@@ -236,6 +236,21 @@ export default async function HomePage({
         </a>
       )}
 
+      {(phase === "knockout_realloc" || phase === "knockout_locked") && (
+        <a
+          href="/knockout"
+          className={
+            phase === "knockout_realloc"
+              ? `inline-block rounded-full bg-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-navy hover:brightness-110 ${pressable}`
+              : `inline-block rounded-full border border-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-gold hover:bg-gold hover:text-navy ${pressable}`
+          }
+        >
+          {phase === "knockout_realloc"
+            ? "Knockout swap & wildcard — open! ⚡"
+            : "Knockout swap results →"}
+        </a>
+      )}
+
       {state?.is_admin && (
         <a
           href="/admin"

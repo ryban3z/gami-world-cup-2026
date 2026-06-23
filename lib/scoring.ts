@@ -215,7 +215,15 @@ export function computeScores(input: ComputeInput): ComputedScore[] {
   for (const o of ownership) {
     (o.phase === "group" ? groupOwner : knockoutOwner).set(o.team_id, o.user_id);
   }
-  const koOwner = (team: string) => knockoutOwner.get(team) ?? groupOwner.get(team) ?? null;
+  // Once the knockout re-allocation has resolved, every manager's final roster
+  // is materialized as phase='knockout' rows, so the knockout map is authoritative
+  // — a dropped (or undrafted) team correctly has no knockout owner. Before that
+  // (no knockout rows yet) we fall back to the group owner, so knockout ladder
+  // points show through during the group stage. resolve_knockout_realloc() is the
+  // only path to knockout_locked, so this flips exactly when ownership is complete.
+  const knockoutMaterialized = knockoutOwner.size > 0;
+  const koOwner = (team: string) =>
+    knockoutMaterialized ? (knockoutOwner.get(team) ?? null) : (groupOwner.get(team) ?? null);
   const ladder = new Map(rules.map((r) => [r.stage, r.points]));
 
   const blank = (): ScoreBreakdown =>

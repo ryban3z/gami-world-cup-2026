@@ -112,9 +112,12 @@ function scoreInput(over: Partial<ComputeInput> = {}): ComputeInput {
     standings: deriveStandings(matches),
     matches,
     ownership: [
-      { user_id: "u1", team_id: "A", phase: "group" }, // champion, no swap
+      { user_id: "u1", team_id: "A", phase: "group" }, // champion, drafted by u1
       { user_id: "u2", team_id: "B", phase: "group" }, // runner-up drafted by u2...
-      { user_id: "u1", team_id: "B", phase: "knockout" }, // ...but u1 picked it up for knockouts
+      // ...after the knockout re-allocation resolves, ownership is fully
+      // materialized: u1 keeps A and picks up B; B's knockout points go to u1.
+      { user_id: "u1", team_id: "A", phase: "knockout" },
+      { user_id: "u1", team_id: "B", phase: "knockout" },
     ],
     categories: [
       { id: "c1", key: "tournament_winner", resolved_answer: "Argentina" },
@@ -210,6 +213,14 @@ describe("computeScores — group-stage win points", () => {
     expect(s.breakdown.by_team.map((t) => t.team)).toEqual(["A"]);
   });
 
+  it("knockout ladder falls back to the group owner before realloc materializes", () => {
+    // No phase='knockout' rows yet (group stage): X's R16 ladder shows through to
+    // its group owner u1, so the leaderboard isn't blank during the knockouts gap.
+    const ms = [M({ stage: "r16", home_team_id: "A", away_team_id: "Q", status: "scheduled" })];
+    const s = run({ matches: ms, standings: deriveStandings(ms) });
+    expect(s.breakdown.knockout).toBe(6); // A reached r16 -> 6, via group-owner fallback
+  });
+
   it("group_win_pts = 0 is inert (migration default)", () => {
     const ms = [M({ stage: "group", winner_team_id: "A", status: "final" })];
     const s = run({ matches: ms, standings: deriveStandings(ms), config: { ...config, group_win_pts: 0 } });
@@ -227,5 +238,51 @@ describe("computeScores — group-stage win points", () => {
     expect(s.breakdown.group).toBe(2 + 4);
     expect(s.breakdown.group_qualify).toBe(4);
     expect(s.breakdown.group_win).toBe(2);
+  });
+});
+
+describe("computeScores — knockout re-allocation", () => {
+  // u1 drops X and claims free agent Y; u2 keeps Z2. All three reach R16 (6 pts).
+  // After resolve, knockout ownership is fully materialized (X dropped → no row).
+  const koMatches: MatchRow[] = [
+    M({ stage: "r16", home_team_id: "X", away_team_id: "Y", status: "scheduled" }),
+    M({ stage: "r16", home_team_id: "Z2", away_team_id: "W", status: "scheduled" }),
+  ];
+  const input = (): ComputeInput => ({
+    userIds: ["u1", "u2"],
+    standings: deriveStandings(koMatches),
+    matches: koMatches,
+    ownership: [
+      { user_id: "u1", team_id: "X", phase: "group" },
+      { user_id: "u2", team_id: "Z2", phase: "group" },
+      // Materialized knockout rosters: u1 = {Y (claimed)}, u2 = {Z2 (kept)}.
+      { user_id: "u1", team_id: "Y", phase: "knockout" },
+      { user_id: "u2", team_id: "Z2", phase: "knockout" },
+    ],
+    categories: [],
+    predictions: [],
+    rules: rules.map((r) => ({ ...r })),
+    config,
+  });
+  const byUser = Object.fromEntries(computeScores(input()).map((s) => [s.user_id, s]));
+
+  it("a swapped-in free agent earns knockout points for the new owner", () => {
+    expect(byUser["u1"].breakdown.knockout).toBe(6); // Y reached r16
+  });
+  it("a dropped team earns the dropper nothing", () => {
+    // X reached r16 but u1 dropped it (no knockout row) → its 6 knockout pts go
+    // to no one (the group-qualify line for X stays with u1, untouched).
+    const xKnockoutLines = Object.values(byUser).flatMap((s) =>
+      s.breakdown.by_team.filter((t) => t.team === "X" && t.phase === "knockout"),
+    );
+    expect(xKnockoutLines).toHaveLength(0);
+    expect(byUser["u1"].breakdown.knockout).not.toBe(12);
+  });
+  it("a do-nothing manager keeps their team's knockout points", () => {
+    expect(byUser["u2"].breakdown.knockout).toBe(6); // Z2 reached r16
+  });
+  it("the dropped team still credits its group owner for qualifying", () => {
+    // Group scoring is untouched by the swap: u1 keeps X's group-qualify reward.
+    expect(byUser["u1"].breakdown.group_qualify).toBe(4);
   });
 });

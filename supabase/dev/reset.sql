@@ -35,6 +35,7 @@ update game_config
        registration_open      = true,
        predictions_open       = false,
        predictions_locked_at  = null,
+       knockout_order         = '{}',
        updated_at             = now()
  where id = 1;
 
