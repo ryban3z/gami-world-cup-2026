@@ -25,12 +25,13 @@ export async function submitSwapNomination(formData: FormData) {
   redirect("/knockout?saved=swap");
 }
 
-// Use the one-time wildcard to replace a single bonus pick (one slot of one
-// category). Fields: category_id, pick_slot, value.
-export async function useWildcard(formData: FormData) {
+// Record/replace the pending wildcard: change one bonus pick (one slot of one
+// category). Editable until the admin resolves — only then is it applied to the
+// bonus prediction. Fields: category_id, pick_slot, value.
+export async function setWildcard(formData: FormData) {
   const supabase = createClient();
 
-  const { error } = await supabase.rpc("use_wildcard", {
+  const { error } = await supabase.rpc("set_wildcard", {
     p_category_id: String(formData.get("category_id")),
     p_pick_slot: Number(formData.get("pick_slot")),
     p_value: String(formData.get("value") ?? ""),
@@ -38,6 +39,15 @@ export async function useWildcard(formData: FormData) {
   if (error) redirect(`/knockout?error=${encodeURIComponent(error.message)}`);
 
   revalidatePath("/knockout");
-  revalidatePath("/predictions");
   redirect("/knockout?saved=wildcard");
+}
+
+// Drop the pending wildcard choice (no bonus pick will change).
+export async function clearWildcard() {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("clear_wildcard");
+  if (error) redirect(`/knockout?error=${encodeURIComponent(error.message)}`);
+
+  revalidatePath("/knockout");
+  redirect("/knockout?saved=wildcard-cleared");
 }

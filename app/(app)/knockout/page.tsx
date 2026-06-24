@@ -11,6 +11,8 @@ interface Team {
   name: string;
   flag_url: string | null;
   group_letter: string | null;
+  qualified?: boolean;
+  eliminated?: boolean;
 }
 interface ReallocState {
   phase: string;
@@ -19,6 +21,7 @@ interface ReallocState {
   my_roster: Team[];
   free_agents: Team[];
   my_submission: { drop_team_id: string | null; pick_team_ids: string[] } | null;
+  my_wildcard: { category_id: string; pick_slot: number; new_value: string } | null;
   results:
     | { user_id: string; display_name: string; drop_name: string; claimed_name: string; claimed_flag_url: string | null }[]
     | null;
@@ -65,9 +68,10 @@ export default async function KnockoutPage({
       <header>
         <h1 className="text-2xl font-bold">Knockout swap & wildcard</h1>
         <p className="mt-1 text-sm text-bodytext">
-          One optional team swap (drop one, claim a free agent that reached the
-          Round of 32) and one optional wildcard (change one of your bonus picks).
-          Both are blind until the window closes.
+          One optional team swap (drop one, rank undrafted teams to pick up — only
+          those reaching the Round of 32 are eligible) and one optional wildcard
+          (change one of your bonus picks). Both are blind and editable until the
+          window closes.
         </p>
       </header>
 
@@ -78,13 +82,17 @@ export default async function KnockoutPage({
       )}
       {searchParams.saved && !searchParams.error && (
         <p className="rounded-lg border border-gold/40 bg-panel p-3 text-sm text-gold">
-          {searchParams.saved === "wildcard" ? "Wildcard used." : "Swap saved."}
+          {searchParams.saved === "wildcard"
+            ? "Wildcard saved."
+            : searchParams.saved === "wildcard-cleared"
+              ? "Wildcard cleared."
+              : "Swap saved."}
         </p>
       )}
 
       {!open && !revealed && (
         <p className="text-bodytext">
-          The knockout swap opens when the admin closes the group stage. Sit tight.
+          The knockout swap opens in the final days of the group stage. Sit tight.
         </p>
       )}
 
@@ -105,17 +113,12 @@ export default async function KnockoutPage({
             <h2 className="text-sm font-bold uppercase tracking-wide text-caption">
               Wildcard
             </h2>
-            {state?.wildcard_used ? (
-              <p className="rounded-lg border border-glow bg-panel p-3 text-sm text-bodytext">
-                You&apos;ve used your wildcard. Picks lock in with everyone else&apos;s.
-              </p>
-            ) : (
-              <WildcardForm
-                categories={categories ?? []}
-                teams={teams ?? []}
-                picksByKey={picksByKey}
-              />
-            )}
+            <WildcardForm
+              categories={categories ?? []}
+              teams={teams ?? []}
+              picksByKey={picksByKey}
+              pending={state?.my_wildcard ?? null}
+            />
           </section>
         </>
       )}

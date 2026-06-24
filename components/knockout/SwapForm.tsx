@@ -6,13 +6,23 @@ interface Team {
   name: string;
   flag_url: string | null;
   group_letter: string | null;
+  qualified?: boolean;
+  eliminated?: boolean;
 }
 interface Submission {
   drop_team_id: string | null;
   pick_team_ids: string[];
 }
 
-// Blind free-agent swap: drop one owned team and rank up to 3 unowned R32 teams.
+// Status marker on a free-agent option: ✓ once it's clinched a knockout spot,
+// ✗ once it's out of the group stage, blank while still in play.
+function statusMark(t: Team): string {
+  if (t.qualified) return " ✓ in R32";
+  if (t.eliminated) return " ✗ out";
+  return "";
+}
+
+// Blind free-agent swap: drop one owned team and rank up to 3 undrafted teams.
 // Prefilled from the caller's current submission; re-submitting overwrites it.
 // Leaving the drop blank (or all picks blank) keeps the roster unchanged.
 export default function SwapForm({
@@ -33,7 +43,7 @@ export default function SwapForm({
         <h3 className="text-sm font-bold text-gold">Drop a team</h3>
         <p className="mb-2 mt-0.5 text-xs text-caption">
           The team you&apos;re willing to give up. It only leaves your roster if you
-          successfully claim a free agent below.
+          successfully claim a team below.
         </p>
         <select
           name="drop_team_id"
@@ -52,8 +62,9 @@ export default function SwapForm({
       <div className="rounded-xl border border-glow bg-panel p-4">
         <h3 className="text-sm font-bold text-gold">Wishlist (ranked)</h3>
         <p className="mb-2 mt-0.5 text-xs text-caption">
-          Up to 3 unowned teams that reached the Round of 32, best first. You&apos;ll
-          be awarded your highest still-available pick when the window closes.
+          Rank up to 3 undrafted teams, best first. When the window closes
+          you&apos;ll be awarded your highest still-available pick — but only teams
+          that actually reach the Round of 32 are eligible (✓ = already in).
         </p>
         <div className="flex flex-col gap-2">
           {[1, 2, 3].map((rank) => (
@@ -71,6 +82,7 @@ export default function SwapForm({
                   <option key={t.id} value={t.id}>
                     {t.group_letter ? `${t.group_letter} · ` : ""}
                     {t.name}
+                    {statusMark(t)}
                   </option>
                 ))}
               </select>

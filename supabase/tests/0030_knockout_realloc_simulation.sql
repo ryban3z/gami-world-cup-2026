@@ -1,10 +1,11 @@
 -- Runnable verification for the knockout re-allocation engine (0030). Paste into
 -- the Supabase SQL editor and Run. Builds a throwaway 3-player game (admin A,
 -- plus B and C) with group ownership, standings and a snapshot leaderboard, then
--- asserts: open snapshots the reverse-standings order; blind submit validates the
--- drop + free-agent picks; the wildcard is one-time; resolve walks worst-first,
--- awards top still-available picks, materializes knockout ownership (dropped teams
--- left unowned), and locks. Then ROLLS BACK.
+-- asserts: open just flips the phase (no order snapshot); blind submit validates
+-- the drop + claimable picks; the wildcard is a pending, editable choice not
+-- applied until resolve; resolve snapshots the reverse-standings order, walks
+-- worst-first awarding top still-available picks, materializes knockout ownership
+-- (dropped teams left unowned), applies the wildcard, and locks. Then ROLLS BACK.
 --
 -- Expected: a NOTICE "KNOCKOUT REALLOC SIMULATION PASSED" and no committed rows.
 
@@ -22,7 +23,6 @@ declare
   t5 uuid := gen_random_uuid();   -- free agent
   t6 uuid := gen_random_uuid();   -- free agent
   v_cat uuid;
-  v_order uuid[];
   v_count int;
   v_used timestamptz;
 begin
@@ -68,15 +68,14 @@ begin
     end if;
   end;
 
-  -- 2) admin opens → snapshots reverse-standings order [B, C, A]
+  -- 2) admin opens → flips phase; the order is NOT snapshotted yet (set at resolve)
   perform set_config('request.jwt.claim.sub', v_a::text, true);
   perform public.open_knockout_realloc();
-  select knockout_order into v_order from game_config where id = 1;
-  if v_order <> array[v_b, v_c, v_a] then
-    raise exception 'expected order [B,C,A], got %', v_order;
-  end if;
   if (select current_phase from game_config where id = 1) <> 'knockout_realloc' then
     raise exception 'open did not advance to knockout_realloc';
+  end if;
+  if (select knockout_order from game_config where id = 1) <> '{}'::uuid[] then
+    raise exception 'open should not snapshot the order';
   end if;
 
   -- 3) submit validation: can't drop a team you don't own
@@ -90,13 +89,13 @@ begin
     end if;
   end;
 
-  -- 4) submit validation: a pick that isn't a free agent (t1 is group-owned)
+  -- 4) submit validation: a pick that isn't claimable (t1 is group-owned)
   begin
     perform public.submit_swap_nomination(t2, array[t1]);
-    raise exception 'expected non-free-agent pick to be rejected';
+    raise exception 'expected non-claimable pick to be rejected';
   exception when others then
-    if sqlerrm <> 'one of your wishlist picks is not an available free agent' then
-      raise exception 'wrong error for non-free-agent: %', sqlerrm;
+    if sqlerrm <> 'one of your wishlist picks is not an available team' then
+      raise exception 'wrong error for non-claimable pick: %', sqlerrm;
     end if;
   end;
 
@@ -107,30 +106,40 @@ begin
   select count(*) into v_count from swap_nominations;
   if v_count <> 4 then raise exception 'expected 4 wishlist rows, got %', v_count; end if;
 
-  -- 6) wildcard: B re-answers the category once; a second use is rejected
+  -- 6) wildcard is a pending, editable choice: nothing applied to predictions yet
   perform set_config('request.jwt.claim.sub', v_b::text, true);
-  perform public.use_wildcard(v_cat, 1, 'New Pick');
-  select wildcard_used_at into v_used from profiles where id = v_b;
-  if v_used is null then raise exception 'wildcard did not stamp wildcard_used_at'; end if;
-  select count(*) into v_count from bonus_predictions
-   where user_id = v_b and category_id = v_cat and is_active and pick_value = 'New Pick';
-  if v_count <> 1 then raise exception 'wildcard did not activate the new pick'; end if;
-  if not exists (select 1 from bonus_predictions where user_id = v_b and category_id = v_cat
-                  and not is_active and pick_value = 'Old Pick' and superseded_by is not null) then
-    raise exception 'wildcard did not supersede the old pick';
+  perform public.set_wildcard(v_cat, 1, 'New Pick');
+  perform public.set_wildcard(v_cat, 1, 'Changed Pick');  -- editable: replaces
+  if (select new_value from wildcard_choices where user_id = v_b) <> 'Changed Pick' then
+    raise exception 'set_wildcard should overwrite the pending choice';
   end if;
-  begin
-    perform public.use_wildcard(v_cat, 1, 'Third Pick');
-    raise exception 'expected second wildcard use to be rejected';
-  exception when others then
-    if sqlerrm <> 'you have already used your wildcard' then
-      raise exception 'wrong error for second wildcard: %', sqlerrm;
-    end if;
-  end;
+  if (select wildcard_used_at from profiles where id = v_b) is not null then
+    raise exception 'wildcard must not be applied before resolve';
+  end if;
+  if not exists (select 1 from bonus_predictions
+                  where user_id = v_b and category_id = v_cat and is_active and pick_value = 'Old Pick') then
+    raise exception 'the original pick must stay active until resolve';
+  end if;
 
-  -- 7) admin resolves: B gets t4 (top pick), C's t4 is taken so C gets t6
+  -- 7) admin resolves: snapshots order [B,C,A]; B gets t4, C's t4 is taken so C gets t6;
+  --    and B's pending wildcard is applied.
   perform set_config('request.jwt.claim.sub', v_a::text, true);
   perform public.resolve_knockout_realloc();
+
+  if (select knockout_order from game_config where id = 1) <> array[v_b, v_c, v_a] then
+    raise exception 'resolve should snapshot order [B,C,A], got %',
+      (select knockout_order from game_config where id = 1);
+  end if;
+  select wildcard_used_at into v_used from profiles where id = v_b;
+  if v_used is null then raise exception 'resolve did not apply B''s wildcard'; end if;
+  if not exists (select 1 from bonus_predictions
+                  where user_id = v_b and category_id = v_cat and is_active and pick_value = 'Changed Pick') then
+    raise exception 'resolve did not activate the wildcard pick';
+  end if;
+  if not exists (select 1 from bonus_predictions where user_id = v_b and category_id = v_cat
+                  and not is_active and pick_value = 'Old Pick' and superseded_by is not null) then
+    raise exception 'resolve did not supersede the old pick';
+  end if;
 
   if (select current_phase from game_config where id = 1) <> 'knockout_locked' then
     raise exception 'resolve did not lock the phase';

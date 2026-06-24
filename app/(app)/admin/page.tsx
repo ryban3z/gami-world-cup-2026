@@ -167,8 +167,8 @@ export default async function AdminPage({
             action={openKnockoutRealloc}
             label="Open knockout re-allocation"
             pendingLabel="Opening…"
-            confirmPrompt="Open the knockout swap + wildcard window. Snapshots the reverse-standings pick order from the current leaderboard. Confirm?"
-            description="Lets managers submit a blind team swap + use their wildcard."
+            confirmPrompt="Open the knockout swap + wildcard window now (do this a few days before the group stage ends so everyone has time). Confirm?"
+            description="Opens the blind, editable swap + wildcard. Resolve later, before the first R32 game."
           />
         </section>
       )}
@@ -181,8 +181,8 @@ export default async function AdminPage({
             tone="danger"
             label="Resolve & lock knockouts"
             pendingLabel="Resolving…"
-            confirmPrompt="Close the window, auto-allocate free agents worst-placed-first, lock knockout ownership, and reveal the swaps. Can't be undone. Confirm?"
-            description="Awards each manager their top still-available pick, then locks."
+            confirmPrompt="Close the window: snapshot the order from the FINAL standings, auto-allocate R32 free agents worst-placed-first, apply wildcards, lock, and reveal. Refresh results first. Can't be undone. Confirm?"
+            description="Snapshots final standings, awards top still-available R32 picks, applies wildcards, locks."
           />
         </section>
       )}

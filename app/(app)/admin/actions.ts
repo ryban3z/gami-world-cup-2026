@@ -64,10 +64,18 @@ function done(): never {
 }
 
 // Auto-allocate the free agents, materialize knockout ownership, lock the phase,
-// then recompute scores (knockout ownership changed, so the ladder re-routes).
+// then recompute scores. A recalc runs FIRST too, so the pick order is
+// snapshotted from up-to-date end-of-group-stage standings (refresh results
+// before resolving for the freshest data); a second recalc after re-routes the
+// knockout ladder to the new owners.
 export async function resolveKnockoutRealloc() {
   await requireAdmin();
   const supabase = createClient();
+  try {
+    await runRecalc();
+  } catch (e) {
+    back(e instanceof Error ? e.message : String(e));
+  }
   const { error } = await supabase.rpc("resolve_knockout_realloc");
   if (error) back(error.message);
   try {

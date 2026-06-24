@@ -22,6 +22,7 @@ begin;
 delete from bonus_predictions;
 delete from team_ownership;
 delete from swap_nominations;
+delete from wildcard_choices;
 delete from scores;
 delete from team_standings;
 delete from matches;
