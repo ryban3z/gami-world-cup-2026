@@ -66,7 +66,7 @@ export default async function KnockoutPage({
         <h1 className="text-2xl font-bold">Knockout swap & wildcard</h1>
         <p className="mt-1 text-sm text-bodytext">
           One optional team swap (drop one, claim a free agent that reached the
-          Round of 32) and one optional wildcard (re-answer a bonus category).
+          Round of 32) and one optional wildcard (change one of your bonus picks).
           Both are blind until the window closes.
         </p>
       </header>

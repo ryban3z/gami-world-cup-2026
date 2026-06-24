@@ -1,6 +1,6 @@
 # Knockout Re-allocation + Wildcard Implementation Plan
 
-**Goal:** The `knockout_realloc` phase — after the group stage each manager may make one optional **blind free-agent team swap** (drop one owned team + a ranked top-3 wishlist of unowned R32 teams, auto-resolved worst-placed-first) and one optional **wildcard** (re-answer one whole bonus category). The admin opens the window (snapshotting the reverse-standings pick order) and resolves it (auto-allocates, materializes knockout ownership, locks).
+**Goal:** The `knockout_realloc` phase — after the group stage each manager may make one optional **blind free-agent team swap** (drop one owned team + a ranked top-3 wishlist of unowned R32 teams, auto-resolved worst-placed-first) and one optional **wildcard** (replace a single bonus pick — one slot). The admin opens the window (snapshotting the reverse-standings pick order) and resolves it (auto-allocates, materializes knockout ownership, locks).
 
 **Architecture:** Mirrors the snake-draft + predictions stack exactly. One migration (`0030`) repurposes the dormant `swap_nominations` table, adds `game_config.knockout_order`, and adds five `security definer` RPCs; `knockout_realloc_state()` is the single blind-during / reveal-after read window (like `draft_state()`). A one-line change in `lib/scoring.ts` makes knockout ownership authoritative once materialized. Pure pick-order math lives in `lib/knockoutView.ts`; presentational forms + a gated `/knockout` server component render it; two `ConfirmAction` admin controls drive the transitions.
 
@@ -8,7 +8,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-05-28-world-cup-pool-design.md` (Knockout Re-allocation).
 
-**Decisions (confirmed with user):** build both features together; wishlist capped at **top 3**; wildcard swaps **one whole category**.
+**Decisions (confirmed with user):** build both features together; wishlist capped at **top 3**; wildcard replaces **a single pick** (one slot, leaving the other untouched).
 
 ---
 
@@ -24,7 +24,7 @@
 | `app/(app)/knockout/page.tsx` | create | gated server component; calls `knockout_realloc_state`; renders swap + wildcard or revealed results |
 | `app/(app)/knockout/actions.ts` | create | `submitSwapNomination` + `useWildcard` server actions |
 | `components/knockout/SwapForm.tsx` | create | drop select + ranked top-3 free-agent selects |
-| `components/knockout/WildcardForm.tsx` | create | per-category re-answer forms (team dropdown vs free text) |
+| `components/knockout/WildcardForm.tsx` | create | one form per pick (slot) — replace a single bonus pick (team dropdown vs free text) |
 | `app/(app)/admin/page.tsx` + `actions.ts` | edit | `openKnockoutRealloc` (group_locked) + `resolveKnockoutRealloc` (knockout_realloc, runs recalc) controls |
 | `app/(app)/home/page.tsx` | edit | `/knockout` nav CTA during `knockout_realloc` / `knockout_locked` |
 | `supabase/dev/reset.sql` | edit | reset `knockout_order` |

@@ -3,7 +3,7 @@
 -- After the group stage each manager may, blind:
 --   * drop one owned team and submit a ranked top-3 wishlist of unowned R32
 --     teams (free-agent pickup), and/or
---   * use a one-time wildcard to re-answer one whole bonus category.
+--   * use a one-time wildcard to replace a single bonus pick (one slot).
 -- The admin opens the window (snapshots the reverse-standings pick order),
 -- then resolves it: managers are walked worst-placed-first and each is awarded
 -- their highest still-available wishlist pick; the drop executes only on a
@@ -165,26 +165,26 @@ begin
 end;
 $$;
 
--- ---------- use_wildcard(): one-time re-answer of a whole bonus category ----------
+-- ---------- use_wildcard(): one-time replacement of a single bonus pick ----------
 -- Models save_bonus_category, but gated on the knockout_realloc window and a
--- one-time profiles.wildcard_used_at. The old active pick(s) are deactivated
--- and linked via superseded_by to the replacements (audit trail), and the new
--- picks become the active ones — the wildcard is a replacement, not a new entity.
+-- one-time profiles.wildcard_used_at. Changes exactly ONE pick (one slot of one
+-- category): the old active pick at that slot is deactivated and linked via
+-- superseded_by to its replacement; the other slot (in a two-answer category) is
+-- left untouched. The wildcard is a replacement, not a new entity.
 create or replace function public.use_wildcard(
   p_category_id uuid,
-  p_value1 text,
-  p_value2 text
+  p_pick_slot int,
+  p_value text
 )
 returns void
 language plpgsql
 security definer set search_path = public
 as $$
 declare
-  v_uid  uuid := auth.uid();
-  v1 text := nullif(btrim(coalesce(p_value1, '')), '');
-  v2 text := nullif(btrim(coalesce(p_value2, '')), '');
-  v_new1 uuid;
-  v_new2 uuid;
+  v_uid   uuid := auth.uid();
+  v       text := nullif(btrim(coalesce(p_value, '')), '');
+  v_other text;
+  v_new   uuid;
 begin
   if v_uid is null then
     raise exception 'not authenticated';
@@ -198,37 +198,36 @@ begin
   if not exists (select 1 from bonus_categories where id = p_category_id and is_active) then
     raise exception 'no such active category';
   end if;
-  if v1 is null then
-    raise exception 'pick at least one value for your wildcard category';
+  if p_pick_slot not in (1, 2) then
+    raise exception 'invalid pick slot';
   end if;
-  if v1 is not null and v2 is not null and lower(v1) = lower(v2) then
+  if v is null then
+    raise exception 'pick a value for your wildcard';
+  end if;
+
+  -- The two picks in a category must still differ — check against the other slot
+  -- (the one we're not changing), which stays as-is.
+  select pick_value into v_other
+    from bonus_predictions
+   where user_id = v_uid and category_id = p_category_id
+     and pick_slot <> p_pick_slot and is_active;
+  if v_other is not null and lower(v) = lower(v_other) then
     raise exception 'your two picks for a category must be different';
   end if;
 
-  -- Deactivate current picks first (the active-only unique index would block the
-  -- new rows otherwise); link the audit trail after the replacements exist.
+  -- Deactivate just this slot's current pick first (the active-only unique index
+  -- would block the new row otherwise); link the audit trail after it exists.
   update bonus_predictions
      set is_active = false
-   where user_id = v_uid and category_id = p_category_id and is_active;
+   where user_id = v_uid and category_id = p_category_id and pick_slot = p_pick_slot and is_active;
 
   insert into bonus_predictions (user_id, category_id, pick_slot, pick_value)
-  values (v_uid, p_category_id, 1, v1)
-  returning id into v_new1;
-
-  if v2 is not null then
-    insert into bonus_predictions (user_id, category_id, pick_slot, pick_value)
-    values (v_uid, p_category_id, 2, v2)
-    returning id into v_new2;
-  end if;
+  values (v_uid, p_category_id, p_pick_slot, v)
+  returning id into v_new;
 
   update bonus_predictions
-     set superseded_by = v_new1
-   where user_id = v_uid and category_id = p_category_id and pick_slot = 1
-     and not is_active and superseded_by is null;
-  update bonus_predictions
-     set superseded_by = v_new2
-   where v_new2 is not null
-     and user_id = v_uid and category_id = p_category_id and pick_slot = 2
+     set superseded_by = v_new
+   where user_id = v_uid and category_id = p_category_id and pick_slot = p_pick_slot
      and not is_active and superseded_by is null;
 
   update profiles set wildcard_used_at = now() where id = v_uid;
@@ -401,7 +400,7 @@ create policy "read own or revealed swap_nominations"
 -- ---------- grants ----------
 grant execute on function public.open_knockout_realloc()                  to authenticated;
 grant execute on function public.submit_swap_nomination(uuid, uuid[])     to authenticated;
-grant execute on function public.use_wildcard(uuid, text, text)           to authenticated;
+grant execute on function public.use_wildcard(uuid, int, text)            to authenticated;
 grant execute on function public.resolve_knockout_realloc()               to authenticated;
 grant execute on function public.knockout_realloc_state()                 to authenticated;
 -- _knockout_free_agent_ids is internal: called only from the definer functions

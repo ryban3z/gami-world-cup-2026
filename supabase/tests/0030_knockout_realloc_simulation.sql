@@ -109,7 +109,7 @@ begin
 
   -- 6) wildcard: B re-answers the category once; a second use is rejected
   perform set_config('request.jwt.claim.sub', v_b::text, true);
-  perform public.use_wildcard(v_cat, 'New Pick', '');
+  perform public.use_wildcard(v_cat, 1, 'New Pick');
   select wildcard_used_at into v_used from profiles where id = v_b;
   if v_used is null then raise exception 'wildcard did not stamp wildcard_used_at'; end if;
   select count(*) into v_count from bonus_predictions
@@ -120,7 +120,7 @@ begin
     raise exception 'wildcard did not supersede the old pick';
   end if;
   begin
-    perform public.use_wildcard(v_cat, 'Third Pick', '');
+    perform public.use_wildcard(v_cat, 1, 'Third Pick');
     raise exception 'expected second wildcard use to be rejected';
   exception when others then
     if sqlerrm <> 'you have already used your wildcard' then
