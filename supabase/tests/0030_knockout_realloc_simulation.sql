@@ -23,6 +23,7 @@ declare
   t5 uuid := gen_random_uuid();   -- free agent
   t6 uuid := gen_random_uuid();   -- free agent
   v_cat uuid;
+  v_order uuid[];
   v_count int;
   v_used timestamptz;
 begin
@@ -103,7 +104,8 @@ begin
   perform public.submit_swap_nomination(t2, array[t4, t5]);
   perform set_config('request.jwt.claim.sub', v_c::text, true);
   perform public.submit_swap_nomination(t3, array[t4, t6]);
-  select count(*) into v_count from swap_nominations;
+  -- Scope counts to the sim's players: a real, populated DB may hold other rows.
+  select count(*) into v_count from swap_nominations where user_id in (v_a, v_b, v_c);
   if v_count <> 4 then raise exception 'expected 4 wishlist rows, got %', v_count; end if;
 
   -- 6) wildcard is a pending, editable choice: nothing applied to predictions yet
@@ -121,14 +123,17 @@ begin
     raise exception 'the original pick must stay active until resolve';
   end if;
 
-  -- 7) admin resolves: snapshots order [B,C,A]; B gets t4, C's t4 is taken so C gets t6;
-  --    and B's pending wildcard is applied.
+  -- 7) admin resolves: snapshots order (B before C before A); B gets t4, C's t4
+  --    is taken so C gets t6; and B's pending wildcard is applied.
   perform set_config('request.jwt.claim.sub', v_a::text, true);
   perform public.resolve_knockout_realloc();
 
-  if (select knockout_order from game_config where id = 1) <> array[v_b, v_c, v_a] then
-    raise exception 'resolve should snapshot order [B,C,A], got %',
-      (select knockout_order from game_config where id = 1);
+  -- Order covers ALL registered players (worst-placed first); assert the relative
+  -- order of the sim's three — B (10 pts) before C (20) before A (30).
+  select knockout_order into v_order from game_config where id = 1;
+  if not (array_position(v_order, v_b) < array_position(v_order, v_c)
+          and array_position(v_order, v_c) < array_position(v_order, v_a)) then
+    raise exception 'expected order B before C before A, got %', v_order;
   end if;
   select wildcard_used_at into v_used from profiles where id = v_b;
   if v_used is null then raise exception 'resolve did not apply B''s wildcard'; end if;
@@ -158,8 +163,9 @@ begin
   if exists (select 1 from team_ownership where phase = 'knockout' and team_id in (t2, t3)) then
     raise exception 'dropped teams must have no knockout owner';
   end if;
-  select count(*) into v_count from team_ownership where phase = 'knockout';
-  if v_count <> 3 then raise exception 'expected 3 knockout rows, got %', v_count; end if;
+  select count(*) into v_count from team_ownership
+   where phase = 'knockout' and user_id in (v_a, v_b, v_c);
+  if v_count <> 3 then raise exception 'expected 3 knockout rows for the sim players, got %', v_count; end if;
   -- C's t4 wishlist row stays pending (not awarded); C's t6 is awarded.
   if (select status from swap_nominations where user_id = v_c and pick_team_id = t4) <> 'pending' then
     raise exception 'C''s taken pick should remain pending';
