@@ -1,17 +1,26 @@
 "use client";
 import { useEffect, useState } from "react";
+import { relativeTime } from "@/lib/relativeTime";
 
-// The admin page is a server component, so a plain `new Date(iso).toLocaleString()`
-// would format on Vercel (US locale, UTC). Render the timestamp on the client so it
-// uses the viewer's own timezone, day-first via en-GB. We format after mount to avoid
-// an SSR/client hydration mismatch (server has no access to the browser's timezone).
+// Renders a past timestamp as relative time ("3h ago"), with the full
+// viewer-timezone timestamp on hover (title). Formatting happens after mount and
+// on a 1-minute tick — both so it stays fresh and to avoid an SSR/client
+// hydration mismatch (the server has no access to the browser's clock/timezone).
 export default function SyncedAt({ iso }: { iso: string | null }) {
   const [text, setText] = useState<string | null>(null);
 
   useEffect(() => {
-    if (iso) setText(new Date(iso).toLocaleString("en-GB"));
+    if (!iso) return;
+    const update = () => setText(relativeTime(iso));
+    update();
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
   }, [iso]);
 
   if (!iso) return <>never</>;
-  return <>{text ?? "…"}</>;
+  return (
+    <time dateTime={iso} title={new Date(iso).toLocaleString("en-GB")}>
+      {text ?? "…"}
+    </time>
+  );
 }
