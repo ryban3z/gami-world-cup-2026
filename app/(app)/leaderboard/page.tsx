@@ -10,6 +10,7 @@ import LeaderboardTable from "@/components/leaderboard/LeaderboardTable";
 import MyTeamsPanel from "@/components/leaderboard/MyTeamsPanel";
 import MatchStrip from "@/components/leaderboard/MatchStrip";
 import TopScorers from "@/components/leaderboard/TopScorers";
+import SyncedAt from "@/components/admin/SyncedAt";
 
 export const dynamic = "force-dynamic"; // always reflect live scores
 
@@ -52,6 +53,7 @@ export default async function LeaderboardPage() {
     { data: standings },
     { data: matches },
     { data: teams },
+    { data: cfg },
   ] = await Promise.all([
     supabase.from("scores").select("user_id, total_points, breakdown"),
     supabase.from("profiles").select("id, display_name, avatar_url"),
@@ -62,6 +64,7 @@ export default async function LeaderboardPage() {
         "id, stage, group_letter, home_team_id, away_team_id, kickoff_at, home_score, away_score, winner_team_id, status",
       ),
     supabase.from("teams").select("id, name, flag_url, external_id"),
+    supabase.from("game_config").select("last_results_sync_at").eq("id", 1).single(),
   ]);
 
   const rows = buildLeaderboard(scores ?? [], profiles ?? [], teams ?? [], user.id);
@@ -85,8 +88,15 @@ export default async function LeaderboardPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 p-6 pb-20 lg:max-w-3xl">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{branding.poolName} — Leaderboard</h1>
+      <header className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{branding.poolName} — Leaderboard</h1>
+          {cfg?.last_results_sync_at && (
+            <p className="mt-1 text-xs text-caption">
+              Results updated <SyncedAt iso={cfg.last_results_sync_at} />
+            </p>
+          )}
+        </div>
         <a href="/home" className={`text-sm text-caption underline ${pressableLink}`}>← Home</a>
       </header>
       <LeaderboardTable rows={rows} complete={phase === "complete"} />

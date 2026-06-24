@@ -17,6 +17,7 @@ import { buildLeaderboard, buildMatchStrip, buildRosterTeamPoints } from "@/lib/
 import { buildTopScorers, type TopScorerRow } from "@/lib/topScorersView";
 import { fetchWcScorers } from "@/lib/footballData";
 import { bonusPicksComplete } from "@/lib/predictions";
+import SyncedAt from "@/components/admin/SyncedAt";
 
 export const dynamic = "force-dynamic"; // always reflect live game state
 
@@ -50,7 +51,7 @@ export default async function HomePage({
       .order("created_at", { ascending: true }),
     supabase
       .from("game_config")
-      .select("predictions_open, predictions_locked_at")
+      .select("predictions_open, predictions_locked_at, last_results_sync_at")
       .eq("id", 1)
       .single(),
     supabase.rpc("draft_state"),
@@ -76,6 +77,7 @@ export default async function HomePage({
   const predictionsOpen = cfg?.predictions_open ?? false;
   const predictionsStarted =
     predictionsOpen || cfg?.predictions_locked_at != null;
+  const lastResultsSync = cfg?.last_results_sync_at ?? null;
   // Bonus-pick progress for the home CTA: nudge harder while the window is open
   // and the picks aren't all in; show a tick once they're complete.
   const picksComplete = bonusPicksComplete(bonusCategories ?? [], myPicks ?? []);
@@ -139,6 +141,11 @@ export default async function HomePage({
         <p className="mt-1 text-bodytext">
           Welcome, <strong className="text-white">{me?.display_name ?? "player"}</strong>.
         </p>
+        {revealed && lastResultsSync && (
+          <p className="mt-1 text-xs text-caption">
+            Results updated <SyncedAt iso={lastResultsSync} />
+          </p>
+        )}
       </header>
 
       {searchParams.error && (
