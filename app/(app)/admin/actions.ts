@@ -20,6 +20,7 @@ async function call(rpc: string, args?: Record<string, unknown>): Promise<never>
   revalidatePath("/admin");
   revalidatePath("/home");
   revalidatePath("/predictions");
+  revalidatePath("/knockout");
   back();
 }
 
@@ -43,6 +44,10 @@ export async function lockPredictions() {
   await call("lock_predictions");
 }
 
+export async function openKnockoutRealloc() {
+  await call("open_knockout_realloc");
+}
+
 async function requireAdmin(): Promise<void> {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -54,7 +59,32 @@ async function requireAdmin(): Promise<void> {
 function done(): never {
   revalidatePath("/admin");
   revalidatePath("/home");
+  revalidatePath("/knockout");
   back();
+}
+
+// Auto-allocate the free agents, materialize knockout ownership, lock the phase,
+// then recompute scores. A recalc runs FIRST too, so the pick order is
+// snapshotted from up-to-date end-of-group-stage standings (refresh results
+// before resolving for the freshest data); a second recalc after re-routes the
+// knockout ladder to the new owners.
+export async function resolveKnockoutRealloc() {
+  await requireAdmin();
+  const supabase = createClient();
+  try {
+    await runRecalc();
+  } catch (e) {
+    back(e instanceof Error ? e.message : String(e));
+  }
+  const { error } = await supabase.rpc("resolve_knockout_realloc");
+  if (error) back(error.message);
+  try {
+    await runRecalc();
+  } catch (e) {
+    back(e instanceof Error ? e.message : String(e));
+  }
+  revalidatePath("/predictions");
+  done();
 }
 
 export async function refreshResults() {

@@ -22,6 +22,7 @@ begin;
 delete from bonus_predictions;
 delete from team_ownership;
 delete from swap_nominations;
+delete from wildcard_choices;
 delete from scores;
 delete from team_standings;
 delete from matches;
@@ -35,6 +36,7 @@ update game_config
        registration_open      = true,
        predictions_open       = false,
        predictions_locked_at  = null,
+       knockout_order         = '{}',
        updated_at             = now()
  where id = 1;
 
