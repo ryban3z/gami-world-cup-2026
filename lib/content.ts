@@ -52,8 +52,9 @@ export const STEPS: Step[] = [
 export const SCORING_ROWS: ScoringRow[] = [
   { label: "Each group-stage win", value: "+1" },
   { label: "Qualify from group", value: "+4" },
-  { label: "Then reach R16 / QF / SF", value: "+6 / +10 / +14" },
-  { label: "Final · Champion", value: "+18 / +24" },
+  { label: "Furthest stage: R16 / QF / SF", value: "+6 / +10 / +14" },
+  { label: "Reach the final", value: "+18" },
+  { label: "Champion (+6 on the final)", value: "+24" },
   { label: "Each correct bonus pick", value: "+4" },
 ];
 
@@ -92,7 +93,7 @@ export const FAQ_ENTRIES: FaqEntry[] = [
   },
   {
     q: "How do knockout points work?",
-    a: "Once the bracket starts, a team scores for the furthest stage it reaches: +6 for the Round of 16, +10 for the quarter-finals, +14 for the semis, +18 for reaching the final, and +24 if it lifts the trophy. These stack on the +4 qualify reward, so a team that goes out in the Round of 16 is worth 10 in total.",
+    a: "A team scores for the furthest stage it reaches — the values are totals, not added together: +6 for the Round of 16, +10 for the quarter-finals, +14 for the semis, and +18 for reaching the final. Winning the final adds a +6 champion bonus, so the trophy is worth +24 in total. All of this stacks on the +4 qualify reward, so a team knocked out in the Round of 16 is worth 10 overall, and a champion is worth 28.",
   },
   {
     q: "How do bonus predictions score?",

@@ -42,9 +42,10 @@ export default async function FaqPage() {
           ))}
         </div>
         <p className="text-xs text-caption">
-          Knockout points are for a team&apos;s furthest stage and stack on the +4
-          qualify reward (so an R16 team = 10). Group points stay with the drafter;
-          knockout points go to the new owner after a swap.
+          Knockout points are for a team&apos;s furthest stage only — they don&apos;t
+          add up — and stack on the +4 qualify reward (so an R16 team = 10, a champion
+          = 28). Group points stay with the drafter; knockout points go to the new
+          owner after a swap.
         </p>
       </section>
 
