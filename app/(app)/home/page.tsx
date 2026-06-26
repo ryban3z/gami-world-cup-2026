@@ -267,9 +267,14 @@ export default async function HomePage({
         </a>
       )}
 
-      <form action={signOut}>
-        <button className={`text-sm text-caption underline ${pressableLink}`}>Sign out</button>
-      </form>
+      <div className="flex flex-col gap-3 border-t border-glow pt-4">
+        <a href="/faq" className={`text-sm text-caption underline ${pressableLink}`}>
+          Rules &amp; FAQ — scoring, wildcard &amp; the knockout swap
+        </a>
+        <form action={signOut}>
+          <button className={`text-sm text-caption underline ${pressableLink}`}>Sign out</button>
+        </form>
+      </div>
     </main>
   );
 }
