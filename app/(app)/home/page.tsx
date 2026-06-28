@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { pressable, pressableLink, ctaFilled, ctaOutline } from "@/lib/ui";
-import { phaseSteps } from "@/lib/adminView";
+import { phaseSteps, currentKnockoutRound } from "@/lib/adminView";
 import HeaderBanner from "@/components/HeaderBanner";
 import PhaseBanner from "@/components/PhaseBanner";
 import { signOut } from "../../(auth)/actions";
@@ -139,7 +139,9 @@ export default async function HomePage({
         )}
       </header>
 
-      {state && <PhaseBanner steps={phaseSteps(phase)} />}
+      {state && (
+        <PhaseBanner steps={phaseSteps(phase, currentKnockoutRound(matches ?? []))} />
+      )}
 
       {searchParams.error && (
         <p className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">

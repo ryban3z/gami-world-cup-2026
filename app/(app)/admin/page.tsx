@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { phaseSteps, type GamePhase } from "@/lib/adminView";
+import { phaseSteps, currentKnockoutRound, type GamePhase } from "@/lib/adminView";
 import { pressableLink } from "@/lib/ui";
 import PhaseBanner from "@/components/PhaseBanner";
 import ConfirmAction from "@/components/admin/ConfirmAction";
@@ -93,7 +93,7 @@ export default async function AdminPage({
         </p>
       )}
 
-      <PhaseBanner steps={phaseSteps(phase)} />
+      <PhaseBanner steps={phaseSteps(phase, currentKnockoutRound(matchRows ?? []))} />
 
       {phase === "registration" && (
         <section className="rounded-xl border border-gold/40 bg-panel p-4">
