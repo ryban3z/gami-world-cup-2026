@@ -8,6 +8,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Tap feedback: the default mobile tap highlight is a dark wash that's invisible
+   on our navy theme, so taps look like nothing happened. Override it with a
+   visible gold flash so every link/button clearly registers a press on phones. */
+a,
+button,
+[role="button"],
+summary {
+  -webkit-tap-highlight-color: rgba(255, 210, 74, 0.22); /* gold @ 22% */
+}
+
 /* Form fields: dark-theme readable by default (Tailwind's reset otherwise
    leaves a white background with inherited white text → invisible input). */
 input,
