@@ -13,9 +13,15 @@ export default function MyTeamsPanel({ teams }: { teams: MyTeamStatus[] }) {
           <li key={i} className="flex items-center gap-2 text-sm">
             {t.flagUrl && (
               /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={t.flagUrl} alt="" className="h-4 w-6 rounded-sm object-cover" />
+              <img
+                src={t.flagUrl}
+                alt=""
+                className={`h-4 w-6 rounded-sm object-cover ${t.isDropped ? "opacity-40 grayscale" : ""}`}
+              />
             )}
-            <span className="flex-1 text-white">{t.name}</span>
+            <span className={`flex-1 ${t.isDropped ? "text-caption line-through" : "text-white"}`}>
+              {t.name}
+            </span>
             <span
               className={`rounded-full px-2 py-0.5 text-xs ${
                 t.isChampion

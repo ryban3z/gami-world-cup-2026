@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { branding } from "@/lib/config";
-import { pressable, pressableLink } from "@/lib/ui";
+import { pressable, pressableLink, ctaFilled, ctaOutline } from "@/lib/ui";
+import { phaseSteps } from "@/lib/adminView";
+import HeaderBanner from "@/components/HeaderBanner";
+import PhaseBanner from "@/components/PhaseBanner";
 import { signOut } from "../../(auth)/actions";
 import { makePick } from "../draft/actions";
 import DraftStatus, { type DraftState } from "@/components/draft/DraftStatus";
@@ -14,8 +16,7 @@ import LeaderboardSummary from "@/components/leaderboard/LeaderboardSummary";
 import MatchStrip from "@/components/leaderboard/MatchStrip";
 import TopScorers from "@/components/leaderboard/TopScorers";
 import { buildLeaderboard, buildMatchStrip, buildRosterTeamPoints } from "@/lib/leaderboardView";
-import { buildTopScorers, type TopScorerRow } from "@/lib/topScorersView";
-import { fetchWcScorers } from "@/lib/footballData";
+import { loadTopScorers } from "@/lib/footballData";
 import { bonusPicksComplete } from "@/lib/predictions";
 import SyncedAt from "@/components/admin/SyncedAt";
 
@@ -100,19 +101,10 @@ export default async function HomePage({
         ownership: state?.rosters ? { rosters: state.rosters, profiles: list } : undefined,
       })
     : null;
-  // Compact Golden Boot board — top 5, live phases only. Read-only colour from
-  // football-data.org (cached 1 hour in the fetch); the full top-10 lives on
-  // /leaderboard. Guarded so a missing token / API hiccup degrades to an empty
-  // container rather than breaking home.
-  let topScorers: TopScorerRow[] = [];
-  const footballDataToken = process.env.FOOTBALL_DATA_TOKEN;
-  if (revealed && footballDataToken) {
-    try {
-      topScorers = buildTopScorers(await fetchWcScorers(footballDataToken), teams ?? [], 5);
-    } catch {
-      topScorers = [];
-    }
-  }
+  // Compact Golden Boot board — top 5, live phases only. The full top-10 lives
+  // on /leaderboard. loadTopScorers guards a missing token / API hiccup down to
+  // an empty container rather than breaking home.
+  const topScorers = revealed ? await loadTopScorers(teams ?? [], 5) : [];
   // Per-team points for the roster cards (keyed `${userId}::${teamId}`).
   const rosterTeamPoints = revealed ? buildRosterTeamPoints(scores ?? []) : {};
   // Teams that have clinched a knockout spot — drives the "Qualified" marker on
@@ -130,15 +122,14 @@ export default async function HomePage({
     : picksComplete
       ? "Bonus predictions ✓ all picks in"
       : "Make your bonus picks — clock is ticking! ⏰";
-  const predClass = predUrgent
-    ? `inline-block rounded-full bg-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-navy hover:brightness-110 ${pressable}`
-    : `inline-block rounded-full border border-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-gold hover:bg-gold hover:text-navy ${pressable}`;
+  const predClass = predUrgent ? ctaFilled : ctaOutline;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col gap-5 p-6 pb-28 lg:max-w-4xl">
+      <HeaderBanner />
+
       <header>
-        <h1 className="text-2xl font-bold">{branding.poolName}</h1>
-        <p className="mt-1 text-bodytext">
+        <p className="text-bodytext">
           Welcome, <strong className="text-white">{me?.display_name ?? "player"}</strong>.
         </p>
         {revealed && lastResultsSync && (
@@ -147,6 +138,8 @@ export default async function HomePage({
           </p>
         )}
       </header>
+
+      {state && <PhaseBanner steps={phaseSteps(phase)} />}
 
       {searchParams.error && (
         <p className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
@@ -246,11 +239,7 @@ export default async function HomePage({
       {(phase === "knockout_realloc" || phase === "knockout_locked") && (
         <a
           href="/knockout"
-          className={
-            phase === "knockout_realloc"
-              ? `inline-block rounded-full bg-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-navy hover:brightness-110 ${pressable}`
-              : `inline-block rounded-full border border-gold px-6 py-3 text-center text-sm font-bold uppercase tracking-wide text-gold hover:bg-gold hover:text-navy ${pressable}`
-          }
+          className={phase === "knockout_realloc" ? ctaFilled : ctaOutline}
         >
           {phase === "knockout_realloc"
             ? "Knockout swap & wildcard — open! ⚡"

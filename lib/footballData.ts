@@ -1,6 +1,8 @@
 // football-data.org WC client + pure mapper. The mapper is unit-tested; the
 // fetch is thin IO used by lib/pipeline.ts (server-only).
 
+import { buildTopScorers, type TopScorerRow } from "@/lib/topScorersView";
+
 export type MatchStage = "group" | "r32" | "r16" | "qf" | "sf" | "third_place" | "final";
 export type MatchStatus = "scheduled" | "live" | "final";
 export type ApiWinner = "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null;
@@ -144,4 +146,21 @@ export async function fetchWcScorers(token: string, limit = 10): Promise<MappedS
   return ((data.scorers ?? []) as ApiScorer[])
     .map(mapApiScorer)
     .filter((s): s is MappedScorer => s !== null);
+}
+
+// Server helper for the Golden Boot board, shared by /home, /leaderboard and
+// /predictions/status. Reads FOOTBALL_DATA_TOKEN and guards the fetch so a
+// missing token or an API hiccup degrades to an empty list (never a broken
+// page). `limit` is the display count; the feed itself is cached 1 hour.
+export async function loadTopScorers(
+  teams: { external_id: string | null; flag_url: string | null }[],
+  limit = 10,
+): Promise<TopScorerRow[]> {
+  const token = process.env.FOOTBALL_DATA_TOKEN;
+  if (!token) return [];
+  try {
+    return buildTopScorers(await fetchWcScorers(token), teams, limit);
+  } catch {
+    return [];
+  }
 }
