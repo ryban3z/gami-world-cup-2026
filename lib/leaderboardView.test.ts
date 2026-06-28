@@ -113,6 +113,31 @@ describe("buildRosterTeamPoints", () => {
   });
 });
 
+import { buildRosterCardTeams } from "@/lib/leaderboardView";
+
+describe("buildRosterCardTeams", () => {
+  it("marks every team kept when there are no swap markers (pre knockout-lock)", () => {
+    expect(buildRosterCardTeams({ team_ids: ["t1", "t2"] })).toEqual([
+      { teamId: "t1", status: "kept" },
+      { teamId: "t2", status: "kept" },
+    ]);
+  });
+
+  it("flags claimed teams, keeps the rest, and appends dropped teams last", () => {
+    expect(
+      buildRosterCardTeams({
+        team_ids: ["t1", "t3"], // current squad: kept t1, claimed t3
+        claimed_team_ids: ["t3"],
+        dropped_team_ids: ["t2"],
+      }),
+    ).toEqual([
+      { teamId: "t1", status: "kept" },
+      { teamId: "t3", status: "claimed" },
+      { teamId: "t2", status: "dropped" },
+    ]);
+  });
+});
+
 import { buildMyTeams } from "@/lib/leaderboardView";
 
 describe("buildMyTeams", () => {

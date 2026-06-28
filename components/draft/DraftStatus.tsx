@@ -11,7 +11,11 @@ export interface BoardTeam {
 export interface Roster {
   user_id: string;
   display_name: string;
-  team_ids: string[];
+  team_ids: string[]; // current roster (kept + claimed), in display order
+  // Knockout-swap markers (empty before the swap locks): free agents picked up,
+  // and group teams given up. See draft_state() / buildRosterCardTeams.
+  claimed_team_ids?: string[];
+  dropped_team_ids?: string[];
 }
 
 export interface DraftState {

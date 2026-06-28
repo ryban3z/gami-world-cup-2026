@@ -131,6 +131,37 @@ export function buildLeaderboard(
   });
 }
 
+// A team's standing on a roster card. "kept" teams the manager drafted and still
+// holds; "claimed" free agents picked up in the knockout swap (badged NEW);
+// "dropped" group teams given up in the swap (shown dimmed/struck-through). Pre
+// knockout-lock everything is "kept".
+export type RosterTeamStatus = "kept" | "claimed" | "dropped";
+export interface RosterCardTeam {
+  teamId: string;
+  status: RosterTeamStatus;
+}
+interface RosterCardInput {
+  team_ids: string[]; // current roster (kept + claimed), in display order
+  claimed_team_ids?: string[]; // subset of team_ids picked up via the swap
+  dropped_team_ids?: string[]; // group teams given up in the swap
+}
+
+// Orders a manager's roster-card teams: their live squad first (kept, then with
+// claimed flagged), dropped teams last. Pure — drives both the home roster cards
+// and the manager profile roster.
+export function buildRosterCardTeams(roster: RosterCardInput): RosterCardTeam[] {
+  const claimed = new Set(roster.claimed_team_ids ?? []);
+  const live: RosterCardTeam[] = roster.team_ids.map((teamId) => ({
+    teamId,
+    status: claimed.has(teamId) ? "claimed" : "kept",
+  }));
+  const dropped: RosterCardTeam[] = (roster.dropped_team_ids ?? []).map((teamId) => ({
+    teamId,
+    status: "dropped",
+  }));
+  return [...live, ...dropped];
+}
+
 // Per-(manager, team) points for the dashboard roster cards, summed across
 // ownership phases. Keyed `${userId}::${teamId}`. A team's group points sit on
 // the group owner and its knockout points on the knockout owner, so a card shows
@@ -218,8 +249,8 @@ export function buildMatchStrip(
 
   // teamId → owner badge, but only for managers who actually uploaded a photo
   // (photo-only by design — no initials fallback in the compact strip). Rosters
-  // reflect group-stage ownership; once knockout re-allocation ships, knockout
-  // fixtures would still show the group owner here.
+  // track current ownership: group-stage until the knockout swap locks, then the
+  // post-swap knockout snapshot (draft_state() flips phase at knockout_locked).
   const ownerByTeam = new Map<string, OwnerBadge>();
   if (opts.ownership) {
     const profileById = new Map(opts.ownership.profiles.map((p) => [p.id, p]));

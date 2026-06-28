@@ -3,9 +3,13 @@
 // Structural "lite" types decouple lib/ from the richer BoardTeam/Roster types
 // declared in components/draft/DraftStatus.
 
+import { buildRosterCardTeams, type RosterTeamStatus } from "./leaderboardView";
+
 interface RosterLite {
   user_id: string;
   team_ids: string[];
+  claimed_team_ids?: string[];
+  dropped_team_ids?: string[];
 }
 
 interface BoardTeamLite {
@@ -55,6 +59,7 @@ export interface ProfileTeam {
   name: string;
   flagUrl: string | null;
   points: number; // accumulated points from this team (all ownership phases)
+  status: RosterTeamStatus; // kept / claimed (NEW) / dropped — knockout swap markers
 }
 
 export interface ManagerPoints {
@@ -116,12 +121,13 @@ export function buildManagerProfileView(input: ManagerProfileInput): ManagerProf
   const byId = new Map(board.map((t) => [t.id, t]));
   const row = rosters?.find((r) => r.user_id === targetUserId) ?? null;
   const teams: ProfileTeam[] = row
-    ? row.team_ids.map((id) => {
+    ? buildRosterCardTeams(row).map(({ teamId: id, status }) => {
         const t = byId.get(id);
         return {
           name: t?.name ?? "—",
           flagUrl: t?.flag_url ?? null,
           points: pointsByTeam.get(id) ?? 0,
+          status,
         };
       })
     : [];

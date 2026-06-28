@@ -1,4 +1,5 @@
 import type { BoardTeam, Roster } from "./DraftStatus";
+import { buildRosterCardTeams } from "@/lib/leaderboardView";
 import { pressable } from "@/lib/ui";
 
 // After group_locked: one card per manager with their teams, in pick order.
@@ -28,17 +29,44 @@ export default function Rosters({
               {r.display_name}
             </h3>
             <ul className="mt-2 flex flex-col gap-1">
-              {r.team_ids.map((id) => {
+              {buildRosterCardTeams(r).map(({ teamId: id, status }) => {
                 const t = byId.get(id);
                 const pts = teamPoints[`${r.user_id}::${id}`] ?? 0;
-                const qualified = qualifiedTeamIds?.has(id) ?? false;
+                // Dropped teams don't qualify-badge (they're no longer in the squad).
+                const qualified = status !== "dropped" && (qualifiedTeamIds?.has(id) ?? false);
+                const dropped = status === "dropped";
                 return (
-                  <li key={id} className="flex items-center gap-2 text-sm text-white">
+                  <li
+                    key={`${status}-${id}`}
+                    className={`flex items-center gap-2 text-sm ${dropped ? "text-caption" : "text-white"}`}
+                  >
                     {t?.flag_url && (
                       /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={t.flag_url} alt="" className="h-4 w-6 rounded-sm object-cover" />
+                      <img
+                        src={t.flag_url}
+                        alt=""
+                        className={`h-4 w-6 rounded-sm object-cover ${dropped ? "opacity-40 grayscale" : ""}`}
+                      />
                     )}
-                    <span className="truncate">{t?.name ?? "—"}</span>
+                    <span className={`truncate ${dropped ? "line-through" : ""}`}>
+                      {t?.name ?? "—"}
+                    </span>
+                    {status === "claimed" && (
+                      <span
+                        title="Picked up in the knockout swap"
+                        className="shrink-0 rounded-full border border-gold/60 px-1.5 text-[10px] font-bold uppercase text-gold"
+                      >
+                        New
+                      </span>
+                    )}
+                    {dropped && (
+                      <span
+                        title="Dropped in the knockout swap"
+                        className="shrink-0 rounded-full border border-glow px-1.5 text-[10px] font-bold uppercase text-caption"
+                      >
+                        Dropped
+                      </span>
+                    )}
                     {qualified && (
                       <span
                         title="Qualified for the knockouts"
