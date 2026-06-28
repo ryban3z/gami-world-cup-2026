@@ -92,13 +92,33 @@ describe("buildManagerProfileView — roster", () => {
     const v = buildManagerProfileView(base());
     expect(v.rosterVisible).toBe(true);
     expect(v.teams).toEqual([
-      { name: "Japan", flagUrl: "jp.png", points: 2 },
-      { name: "Argentina", flagUrl: "ar.png", points: 9 },
+      { name: "Japan", flagUrl: "jp.png", points: 2, status: "kept" },
+      { name: "Argentina", flagUrl: "ar.png", points: 9, status: "kept" },
     ]);
   });
   it("falls back to em dash for a team id missing from the board", () => {
     const v = buildManagerProfileView(base({ rosters: [{ user_id: "u1", team_ids: ["t9"] }] }));
-    expect(v.teams).toEqual([{ name: "—", flagUrl: null, points: 0 }]);
+    expect(v.teams).toEqual([{ name: "—", flagUrl: null, points: 0, status: "kept" }]);
+  });
+  it("flags claimed free agents and appends dropped teams (knockout swap)", () => {
+    const v = buildManagerProfileView(
+      base({
+        rosters: [
+          {
+            user_id: "u1",
+            team_ids: ["t1", "t3"], // kept Argentina, claimed USA
+            claimed_team_ids: ["t3"],
+            dropped_team_ids: ["t2"], // dropped Japan
+          },
+        ],
+      }),
+    );
+    expect(v.teams).toEqual([
+      { name: "Argentina", flagUrl: "ar.png", points: 9, status: "kept" },
+      { name: "USA", flagUrl: null, points: 0, status: "claimed" },
+      // Dropped team comes last and still shows its banked group points.
+      { name: "Japan", flagUrl: "jp.png", points: 2, status: "dropped" },
+    ]);
   });
   it("yields empty teams when revealed but this manager has no roster row", () => {
     const v = buildManagerProfileView(base({ rosters: [{ user_id: "other", team_ids: ["t1"] }] }));

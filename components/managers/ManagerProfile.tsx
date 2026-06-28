@@ -63,19 +63,42 @@ export default function ManagerProfile({ view }: { view: ManagerProfileView }) {
         <h2 className="text-sm font-bold uppercase tracking-wide text-caption">Roster</h2>
         {view.rosterVisible ? (
           <ul className="flex flex-col gap-1">
-            {view.teams.map((t, i) => (
-              <li
-                key={`${t.name}-${i}`}
-                className="flex items-center gap-2 text-sm text-white"
-              >
-                {t.flagUrl && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={t.flagUrl} alt="" className="h-4 w-6 rounded-sm object-cover" />
-                )}
-                <span>{t.name}</span>
-                <span className="ml-auto text-caption">{t.points} pts</span>
-              </li>
-            ))}
+            {view.teams.map((t, i) => {
+              const dropped = t.status === "dropped";
+              return (
+                <li
+                  key={`${t.name}-${i}`}
+                  className={`flex items-center gap-2 text-sm ${dropped ? "text-caption" : "text-white"}`}
+                >
+                  {t.flagUrl && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={t.flagUrl}
+                      alt=""
+                      className={`h-4 w-6 rounded-sm object-cover ${dropped ? "opacity-40 grayscale" : ""}`}
+                    />
+                  )}
+                  <span className={dropped ? "line-through" : ""}>{t.name}</span>
+                  {t.status === "claimed" && (
+                    <span
+                      title="Picked up in the knockout swap"
+                      className="shrink-0 rounded-full border border-gold/60 px-1.5 text-[10px] font-bold uppercase text-gold"
+                    >
+                      New
+                    </span>
+                  )}
+                  {dropped && (
+                    <span
+                      title="Dropped in the knockout swap"
+                      className="shrink-0 rounded-full border border-glow px-1.5 text-[10px] font-bold uppercase text-caption"
+                    >
+                      Dropped
+                    </span>
+                  )}
+                  <span className="ml-auto text-caption">{t.points} pts</span>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="text-sm text-bodytext">Roster hidden until the draft is revealed.</p>
