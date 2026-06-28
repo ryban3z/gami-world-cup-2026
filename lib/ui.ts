@@ -13,8 +13,10 @@ export const focusRing =
 export const pressable = `transition active:scale-95 ${focusRing}`;
 
 // Inline text links (e.g. "Sign out", "← Home"): no transform (inline can't
-// scale), so press feedback is a colour shift, plus the same focus ring.
-export const pressableLink = `rounded-sm transition hover:text-bodytext active:text-white ${focusRing}`;
+// scale), so press feedback is a colour shift to gold (matching the gold tap
+// highlight in globals.css) plus the same focus ring. The gold is far more
+// noticeable than the old caption→white shift on muted links.
+export const pressableLink = `rounded-sm transition hover:text-bodytext active:text-gold ${focusRing}`;
 
 // Gold pill CTAs. `ctaFilled` is the primary/urgent action (filled gold),
 // `ctaOutline` the secondary (bordered). Both carry the shared press + focus
