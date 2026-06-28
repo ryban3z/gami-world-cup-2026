@@ -2,8 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { pressableLink } from "@/lib/ui";
 import { BONUS_AWARD_INFO } from "@/lib/content";
-import { fetchWcScorers } from "@/lib/footballData";
-import { buildTopScorers, type TopScorerRow } from "@/lib/topScorersView";
+import { loadTopScorers } from "@/lib/footballData";
 import { buildGoldenBootTracker, type GoldenBootPickRow } from "@/lib/bonusTrackerView";
 import TopScorers from "@/components/leaderboard/TopScorers";
 import GoldenBootTracker from "@/components/predictions/GoldenBootTracker";
@@ -38,17 +37,9 @@ export default async function BonusStatusPage() {
   const nameById: Record<string, string> = {};
   for (const p of profiles ?? []) nameById[p.id] = p.display_name;
 
-  // Live top-10 scorers board (cached 1 hour in the fetch). Guarded so a missing
-  // token / API hiccup degrades to an empty container, never a broken page.
-  let topScorers: TopScorerRow[] = [];
-  const footballDataToken = process.env.FOOTBALL_DATA_TOKEN;
-  if (footballDataToken) {
-    try {
-      topScorers = buildTopScorers(await fetchWcScorers(footballDataToken), teams ?? [], 10);
-    } catch {
-      topScorers = [];
-    }
-  }
+  // Live top-10 scorers board. loadTopScorers guards a missing token / API
+  // hiccup down to an empty container, never a broken page.
+  const topScorers = await loadTopScorers(teams ?? [], 10);
 
   // Golden Boot picks cross-referenced against the live board.
   const goldenBootId = cats.find((c) => c.key === "golden_boot")?.id;

@@ -58,6 +58,8 @@ export interface LeaderRow {
 export interface MyTeamStatus {
   name: string; flagUrl: string | null; stageLabel: string;
   isEliminated: boolean; isChampion: boolean; isQualified: boolean;
+  // Dropped in the knockout swap — shown struck-through after the live squad.
+  isDropped: boolean;
 }
 // A manager's photo + name, shown next to a team they own in the match strip.
 export interface OwnerBadge { avatarUrl: string; name: string; }
@@ -184,6 +186,7 @@ export function buildMyTeams(
   myTeamIds: string[],
   board: TeamLite[],
   standings: StandingLite[],
+  droppedTeamIds: string[] = [],
 ): MyTeamStatus[] {
   const teamById = new Map(board.map((t) => [t.id, t]));
   const standingById = new Map(standings.map((s) => [s.team_id, s]));
@@ -211,6 +214,7 @@ export function buildMyTeams(
       isEliminated,
       isChampion,
       isQualified,
+      isDropped: false,
     };
     // bucket: champion(0) < alive(1) < eliminated(2)
     const bucket = isChampion ? 0 : isEliminated ? 2 : 1;
@@ -223,7 +227,24 @@ export function buildMyTeams(
       b.depth - a.depth ||
       a.status.name.localeCompare(b.status.name),
   );
-  return enriched.map((e) => e.status);
+
+  // Teams dropped in the knockout swap trail the live squad, alphabetical.
+  const dropped: MyTeamStatus[] = droppedTeamIds
+    .map((id) => {
+      const t = teamById.get(id);
+      return {
+        name: t?.name ?? "—",
+        flagUrl: t?.flag_url ?? null,
+        stageLabel: "Dropped",
+        isEliminated: false,
+        isChampion: false,
+        isQualified: false,
+        isDropped: true,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return [...enriched.map((e) => e.status), ...dropped];
 }
 
 // Compact match strip: the most recent finished results and the next upcoming

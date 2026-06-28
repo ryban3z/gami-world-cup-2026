@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { phaseSteps, type GamePhase } from "@/lib/adminView";
 import { pressableLink } from "@/lib/ui";
-import PhaseBanner from "@/components/admin/PhaseBanner";
+import PhaseBanner from "@/components/PhaseBanner";
 import ConfirmAction from "@/components/admin/ConfirmAction";
 import MatchOverride, { type OverrideMatch } from "@/components/admin/MatchOverride";
 import BonusResolve, { type ResolveCategory } from "@/components/admin/BonusResolve";

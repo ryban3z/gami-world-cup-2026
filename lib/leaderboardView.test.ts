@@ -190,8 +190,23 @@ describe("buildMyTeams", () => {
     const out = buildMyTeams(["t3"], board, []);
     expect(out[0]).toEqual({
       name: "USA", flagUrl: null, stageLabel: "Group",
-      isEliminated: false, isChampion: false, isQualified: false,
+      isEliminated: false, isChampion: false, isQualified: false, isDropped: false,
     });
+  });
+
+  it("appends dropped teams (struck-through) after the live squad, alphabetical", () => {
+    const out = buildMyTeams(
+      ["t1"],
+      board,
+      [{ team_id: "t1", furthest_stage: "r16", is_eliminated: false, is_champion: false, qualified: true }],
+      ["t4", "t2"], // dropped Brazil + Japan
+    );
+    expect(out.map((t) => t.name)).toEqual(["Argentina", "Brazil", "Japan"]);
+    expect(out.filter((t) => t.isDropped).map((t) => [t.name, t.stageLabel])).toEqual([
+      ["Brazil", "Dropped"],
+      ["Japan", "Dropped"],
+    ]);
+    expect(out[0].isDropped).toBe(false);
   });
 });
 

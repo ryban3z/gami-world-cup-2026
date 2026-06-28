@@ -2,6 +2,7 @@ import type { PhaseStep } from "@/lib/adminView";
 
 // Read-only orientation banner: the phase state machine as a row of pills,
 // the current phase highlighted in gold, past phases dimmed, future faded.
+// Shared by /home (player orientation) and /admin (phase controls).
 export default function PhaseBanner({ steps }: { steps: PhaseStep[] }) {
   return (
     <section className="rounded-xl border border-glow bg-panel p-4">

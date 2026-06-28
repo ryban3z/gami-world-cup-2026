@@ -52,9 +52,11 @@ export default function DraftStatus({ state }: { state: DraftState }) {
   // group_locked and beyond (the draft phase is handled by TurnBanner on /home)
   const message =
     phase === "group_locked"
-      ? "Group stage underway."
-      : phase === "complete"
-        ? "Tournament complete — final standings are in."
-        : "Knockout rounds underway.";
+      ? "Group stage underway — every goal counts. ⚽"
+      : phase === "knockout_realloc"
+        ? "Knockout swap window's open. 🔄"
+        : phase === "knockout_locked"
+          ? "Knockout football is here. ⚡"
+          : "Full time — champions crowned. 🏆";
   return <p className="text-lg font-bold text-gold">{message}</p>;
 }
