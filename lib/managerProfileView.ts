@@ -29,6 +29,11 @@ interface PredictionLite {
   pick_value: string;
 }
 
+interface StandingLite {
+  team_id: string;
+  is_eliminated: boolean;
+}
+
 interface ScoreLite {
   total_points: number;
   breakdown: {
@@ -53,6 +58,7 @@ export interface ManagerProfileInput {
   categories: CategoryLite[]; // active categories, in display order
   predictions: PredictionLite[]; // this manager's active picks
   score: ScoreLite | null; // this manager's score row; null until they've scored
+  standings?: StandingLite[]; // team_standings rows — drives the eliminated marker
 }
 
 export interface ProfileTeam {
@@ -60,6 +66,7 @@ export interface ProfileTeam {
   flagUrl: string | null;
   points: number; // accumulated points from this team (all ownership phases)
   status: RosterTeamStatus; // kept / claimed (NEW) / dropped — knockout swap markers
+  isEliminated: boolean;
 }
 
 export interface ManagerPoints {
@@ -92,8 +99,11 @@ export interface ManagerProfileView {
 export function buildManagerProfileView(input: ManagerProfileInput): ManagerProfileView {
   const {
     displayName, summary, avatarUrl, isSelf, targetUserId,
-    rosters, board, predictionsLockedAt, categories, predictions, score,
+    rosters, board, predictionsLockedAt, categories, predictions, score, standings,
   } = input;
+  const eliminatedTeamIds = new Set(
+    (standings ?? []).filter((s) => s.is_eliminated).map((s) => s.team_id),
+  );
 
   const trimmed = summary?.trim();
   const cleanSummary = trimmed ? trimmed : null;
@@ -128,6 +138,8 @@ export function buildManagerProfileView(input: ManagerProfileInput): ManagerProf
           flagUrl: t?.flag_url ?? null,
           points: pointsByTeam.get(id) ?? 0,
           status,
+          // Dropped teams don't eliminated-badge — already shown struck-through.
+          isEliminated: status !== "dropped" && eliminatedTeamIds.has(id),
         };
       })
     : [];

@@ -20,6 +20,7 @@ export default async function ManagerPage({ params }: { params: { id: string } }
     { data: categories },
     { data: predictions },
     { data: score },
+    { data: standings },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -39,6 +40,7 @@ export default async function ManagerPage({ params }: { params: { id: string } }
       .select("total_points, breakdown")
       .eq("user_id", params.id)
       .maybeSingle(),
+    supabase.from("team_standings").select("team_id, is_eliminated"),
   ]);
 
   if (!manager) notFound();
@@ -62,6 +64,7 @@ export default async function ManagerPage({ params }: { params: { id: string } }
     categories: categories ?? [],
     predictions: predictions ?? [],
     score: (score as ManagerProfileInput["score"]) ?? null,
+    standings: standings ?? [],
   });
 
   return <ManagerProfile view={view} />;

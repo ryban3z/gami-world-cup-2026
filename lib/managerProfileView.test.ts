@@ -92,13 +92,15 @@ describe("buildManagerProfileView — roster", () => {
     const v = buildManagerProfileView(base());
     expect(v.rosterVisible).toBe(true);
     expect(v.teams).toEqual([
-      { name: "Japan", flagUrl: "jp.png", points: 2, status: "kept" },
-      { name: "Argentina", flagUrl: "ar.png", points: 9, status: "kept" },
+      { name: "Japan", flagUrl: "jp.png", points: 2, status: "kept", isEliminated: false },
+      { name: "Argentina", flagUrl: "ar.png", points: 9, status: "kept", isEliminated: false },
     ]);
   });
   it("falls back to em dash for a team id missing from the board", () => {
     const v = buildManagerProfileView(base({ rosters: [{ user_id: "u1", team_ids: ["t9"] }] }));
-    expect(v.teams).toEqual([{ name: "—", flagUrl: null, points: 0, status: "kept" }]);
+    expect(v.teams).toEqual([
+      { name: "—", flagUrl: null, points: 0, status: "kept", isEliminated: false },
+    ]);
   });
   it("flags claimed free agents and appends dropped teams (knockout swap)", () => {
     const v = buildManagerProfileView(
@@ -114,16 +116,39 @@ describe("buildManagerProfileView — roster", () => {
       }),
     );
     expect(v.teams).toEqual([
-      { name: "Argentina", flagUrl: "ar.png", points: 9, status: "kept" },
-      { name: "USA", flagUrl: null, points: 0, status: "claimed" },
+      { name: "Argentina", flagUrl: "ar.png", points: 9, status: "kept", isEliminated: false },
+      { name: "USA", flagUrl: null, points: 0, status: "claimed", isEliminated: false },
       // Dropped team comes last and still shows its banked group points.
-      { name: "Japan", flagUrl: "jp.png", points: 2, status: "dropped" },
+      { name: "Japan", flagUrl: "jp.png", points: 2, status: "dropped", isEliminated: false },
     ]);
   });
   it("yields empty teams when revealed but this manager has no roster row", () => {
     const v = buildManagerProfileView(base({ rosters: [{ user_id: "other", team_ids: ["t1"] }] }));
     expect(v.rosterVisible).toBe(true);
     expect(v.teams).toEqual([]);
+  });
+  it("flags eliminated teams via team_standings, but not dropped ones", () => {
+    const v = buildManagerProfileView(
+      base({
+        rosters: [
+          {
+            user_id: "u1",
+            team_ids: ["t1", "t3"],
+            claimed_team_ids: ["t3"],
+            dropped_team_ids: ["t2"],
+          },
+        ],
+        standings: [
+          { team_id: "t1", is_eliminated: true },
+          { team_id: "t2", is_eliminated: true },
+        ],
+      }),
+    );
+    expect(v.teams.map((t) => ({ name: t.name, isEliminated: t.isEliminated }))).toEqual([
+      { name: "Argentina", isEliminated: true },
+      { name: "USA", isEliminated: false },
+      { name: "Japan", isEliminated: false }, // dropped — no eliminated badge
+    ]);
   });
 });
 

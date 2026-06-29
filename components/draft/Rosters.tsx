@@ -12,12 +12,14 @@ export default function Rosters({
   profilesUnlocked = false,
   teamPoints = {},
   qualifiedTeamIds,
+  eliminatedTeamIds,
 }: {
   rosters: Roster[];
   board: BoardTeam[];
   profilesUnlocked?: boolean;
   teamPoints?: Record<string, number>; // `${userId}::${teamId}` → points so far
   qualifiedTeamIds?: Set<string>; // teams that have clinched a knockout spot
+  eliminatedTeamIds?: Set<string>; // teams knocked out of the knockouts
 }) {
   const byId = new Map(board.map((t) => [t.id, t]));
   return (
@@ -35,6 +37,9 @@ export default function Rosters({
                 // Dropped teams don't qualify-badge (they're no longer in the squad).
                 const qualified = status !== "dropped" && (qualifiedTeamIds?.has(id) ?? false);
                 const dropped = status === "dropped";
+                // Dropped teams don't eliminated-badge either — they're already
+                // greyed/struck-through to show they're gone from this squad.
+                const eliminated = !dropped && (eliminatedTeamIds?.has(id) ?? false);
                 return (
                   <li
                     key={`${status}-${id}`}
@@ -73,6 +78,14 @@ export default function Rosters({
                         className="shrink-0 rounded-full border border-green-400/50 px-1.5 text-[10px] font-bold uppercase text-green-300"
                       >
                         ✓ Q
+                      </span>
+                    )}
+                    {eliminated && (
+                      <span
+                        title="Eliminated"
+                        className="shrink-0 rounded-full border border-red-400/50 px-1.5 text-[10px] font-bold uppercase text-red-300"
+                      >
+                        Out
                       </span>
                     )}
                     <span className="ml-auto shrink-0 text-caption">{pts} pts</span>

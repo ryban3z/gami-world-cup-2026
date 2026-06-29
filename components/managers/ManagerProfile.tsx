@@ -95,6 +95,14 @@ export default function ManagerProfile({ view }: { view: ManagerProfileView }) {
                       Dropped
                     </span>
                   )}
+                  {t.isEliminated && (
+                    <span
+                      title="Eliminated"
+                      className="shrink-0 rounded-full border border-red-400/50 px-1.5 text-[10px] font-bold uppercase text-red-300"
+                    >
+                      Out
+                    </span>
+                  )}
                   <span className="ml-auto text-caption">{t.points} pts</span>
                 </li>
               );

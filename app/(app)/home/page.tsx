@@ -68,7 +68,7 @@ export default async function HomePage({
       .from("bonus_predictions")
       .select("category_id, pick_value")
       .eq("user_id", user.id),
-    supabase.from("team_standings").select("team_id, qualified"),
+    supabase.from("team_standings").select("team_id, qualified, is_eliminated"),
   ]);
 
   const state = (draft as DraftState | null) ?? null;
@@ -111,6 +111,11 @@ export default async function HomePage({
   // the roster cards (same flag as the leaderboard "My teams" panel).
   const qualifiedTeamIds = revealed
     ? new Set((standings ?? []).filter((s) => s.qualified).map((s) => s.team_id))
+    : new Set<string>();
+  // Teams knocked out of the knockouts — drives the "Eliminated" marker on the
+  // roster cards.
+  const eliminatedTeamIds = revealed
+    ? new Set((standings ?? []).filter((s) => s.is_eliminated).map((s) => s.team_id))
     : new Set<string>();
 
   // Bonus-predictions CTA: while the window is open, nudge hard if picks are
@@ -208,6 +213,7 @@ export default async function HomePage({
             profilesUnlocked={profilesUnlocked}
             teamPoints={rosterTeamPoints}
             qualifiedTeamIds={qualifiedTeamIds}
+            eliminatedTeamIds={eliminatedTeamIds}
           />
         </section>
       )}
