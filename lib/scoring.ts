@@ -123,6 +123,16 @@ export function deriveStandings(matches: MatchRow[]): StandingRow[] {
     m.stage === "final" && m.status === "final" ? m.winner_team_id : null;
   let champion: string | null = null;
 
+  // A team's group is finished once every group-stage match in its letter is
+  // final — needed below to tell "still has games left to clinch" apart from
+  // "group's over and they missed the cut" for the never-qualified case.
+  const groupFinished = new Map<string, boolean>();
+  for (const m of matches) {
+    if (m.stage !== "group" || !m.group_letter) continue;
+    const finished = groupFinished.get(m.group_letter) ?? true;
+    groupFinished.set(m.group_letter, finished && m.status === "final");
+  }
+
   for (const m of matches) {
     const c = championOf(m);
     if (c) champion = c;
@@ -139,13 +149,17 @@ export function deriveStandings(matches: MatchRow[]): StandingRow[] {
   const rows: StandingRow[] = [];
   for (const [team_id, { stage, match }] of acc) {
     const is_champion = team_id === champion;
-    const is_eliminated =
-      !is_champion &&
-      stage !== "group" &&
-      match.status === "final" &&
-      match.winner_team_id !== team_id;
     const qualified =
       groupQualified.has(team_id) || STAGE_RANK[stage] >= STAGE_RANK["r32"];
+    // Knockout exit: lost the furthest match they reached beyond the groups.
+    // Group exit: their group has finished and they never qualified (covers
+    // both the clinched-top-2 case and the best-3rd-placed R32 case) — a team
+    // stuck at furthest_stage="group" otherwise never gets marked eliminated.
+    const is_eliminated =
+      !is_champion &&
+      (stage !== "group"
+        ? match.status === "final" && match.winner_team_id !== team_id
+        : !qualified && (groupFinished.get(match.group_letter ?? "") ?? false));
     rows.push({ team_id, furthest_stage: stage, is_eliminated, is_champion, qualified });
   }
   return rows;

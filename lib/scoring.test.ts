@@ -64,6 +64,38 @@ const clinchedGroupA: MatchRow[] = [
   groupGame("GA", "GD", null, "scheduled"), // GA's last game still to play
 ];
 
+// Full round-robin, all six games final: GA & GD finish top two, GB & GC are
+// out — but neither ever appears in an r32 fixture (no draw needed for the
+// bug we're testing: elimination has to be derivable from the group alone).
+const finishedGroupA: MatchRow[] = [
+  groupGame("GA", "GB", "GA"),
+  groupGame("GA", "GC", "GA"),
+  groupGame("GB", "GC", "GB"),
+  groupGame("GD", "GB", "GD"),
+  groupGame("GD", "GC", "GD"),
+  groupGame("GA", "GD", null), // draw
+];
+
+describe("deriveStandings — group-stage elimination", () => {
+  const byId = Object.fromEntries(deriveStandings(finishedGroupA).map((s) => [s.team_id, s]));
+  it("marks group-stage non-qualifiers eliminated once their group finishes", () => {
+    expect(byId["GB"]).toMatchObject({ furthest_stage: "group", qualified: false, is_eliminated: true });
+    expect(byId["GC"]).toMatchObject({ furthest_stage: "group", qualified: false, is_eliminated: true });
+  });
+  it("does not mark qualified group-stage teams eliminated", () => {
+    expect(byId["GA"]).toMatchObject({ furthest_stage: "group", qualified: true, is_eliminated: false });
+    expect(byId["GD"]).toMatchObject({ furthest_stage: "group", qualified: true, is_eliminated: false });
+  });
+  it("does not eliminate a team while its group still has games left", () => {
+    const byIdUnfinished = Object.fromEntries(
+      deriveStandings(clinchedGroupA).map((s) => [s.team_id, s]),
+    );
+    // GC is on 0 pts with one game (GA v GD) still to play in the group —
+    // mathematically out of qualification but the group isn't over yet.
+    expect(byIdUnfinished["GC"]).toMatchObject({ furthest_stage: "group", is_eliminated: false });
+  });
+});
+
 describe("deriveGroupQualified", () => {
   it("marks teams mathematically guaranteed a top-2 finish", () => {
     expect([...deriveGroupQualified(clinchedGroupA)].sort()).toEqual(["GA", "GD"]);
