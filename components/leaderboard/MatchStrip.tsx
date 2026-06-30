@@ -17,6 +17,13 @@ function OwnerAvatar({ owner }: { owner: OwnerBadge }) {
 
 function MatchRow({ m }: { m: MatchStripItem }) {
   const done = m.status === "final";
+  // A penalty shootout is reported on its own line so the matchup keeps the
+  // on-pitch score ("1–1") and the pens ("4–3 on penalties") never get mistaken
+  // for the result. Shown only when both shootout scores are present.
+  const pens =
+    m.homePenalties != null && m.awayPenalties != null
+      ? `${m.homePenalties}–${m.awayPenalties} on penalties`
+      : null;
   return (
     <li className="flex flex-col items-center gap-0.5 py-1.5 text-center">
       {/* Meta line: stage + (for upcoming fixtures) the local kickoff time. Kept
@@ -55,6 +62,8 @@ function MatchRow({ m }: { m: MatchStripItem }) {
           {m.awayOwner && <OwnerAvatar owner={m.awayOwner} />}
         </span>
       </span>
+      {/* Shootout score, only on penalty-decided knockouts. */}
+      {done && pens && <span className="text-xs text-caption">{pens}</span>}
     </li>
   );
 }

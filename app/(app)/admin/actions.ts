@@ -113,12 +113,17 @@ export async function overrideMatch(formData: FormData) {
   const supabase = createClient();
   // "" = auto (derive winner from the scores); a team id = penalties winner.
   const winner = String(formData.get("winner_team_id") ?? "");
+  // Blank penalty fields → null (no shootout); the RPC rejects a half-entered pair.
+  const homePens = String(formData.get("home_penalties") ?? "").trim();
+  const awayPens = String(formData.get("away_penalties") ?? "").trim();
   const { error } = await supabase.rpc("admin_override_match", {
     p_match_id: String(formData.get("match_id")),
     p_home_score: Number(formData.get("home_score")),
     p_away_score: Number(formData.get("away_score")),
     p_status: String(formData.get("status")),
     p_winner_team_id: winner || null,
+    p_home_penalties: homePens === "" ? null : Number(homePens),
+    p_away_penalties: awayPens === "" ? null : Number(awayPens),
   });
   if (error) back(error.message);
   try { await runRecalc(); } catch (e) { back(e instanceof Error ? e.message : String(e)); }

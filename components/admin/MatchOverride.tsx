@@ -11,6 +11,8 @@ export interface OverrideMatch {
   away_name: string;
   home_score: number | null;
   away_score: number | null;
+  home_penalties: number | null;
+  away_penalties: number | null;
   status: string;
   winner_team_id: string | null;
   is_manual_override: boolean;
@@ -51,6 +53,19 @@ export default function MatchOverride({ matches }: { matches: OverrideMatch[] })
                   {m.home_id && <option value={m.home_id}>{m.home_name} (pens)</option>}
                   {m.away_id && <option value={m.away_id}>{m.away_name} (pens)</option>}
                 </select>
+              )}
+              {/* Shootout score for a penalty-decided knockout. Enter the
+                  on-pitch score above (e.g. 1–1) and the pens here (e.g. 4–3);
+                  leave both blank for a match not decided on penalties. */}
+              {m.stage !== "group" && (
+                <span className="flex items-center gap-2 text-caption">
+                  <span className="text-xs">pens</span>
+                  <input name="home_penalties" type="number" min={0} defaultValue={m.home_penalties ?? ""}
+                    placeholder="–" className="w-14 rounded bg-navy p-1 text-center text-white" aria-label="home penalties" />
+                  <span>–</span>
+                  <input name="away_penalties" type="number" min={0} defaultValue={m.away_penalties ?? ""}
+                    placeholder="–" className="w-14 rounded bg-navy p-1 text-center text-white" aria-label="away penalties" />
+                </span>
               )}
               <button className={`rounded-full border border-gold px-3 py-1 text-xs font-bold text-gold ${pressable}`}>
                 Save
