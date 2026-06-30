@@ -158,6 +158,12 @@ export default async function HomePage({
 
       {revealed && <LeaderboardSummary rows={summaryRows} />}
 
+      {revealed && (
+        <a href="/bracket" className={ctaOutline}>
+          Knockout bracket — road to the final 🏆
+        </a>
+      )}
+
       {state && phase === "draft" && (
         <>
           <TurnBanner
@@ -252,12 +258,6 @@ export default async function HomePage({
           {phase === "knockout_realloc"
             ? "Knockout swap & wildcard — open! ⚡"
             : "Knockout swap results →"}
-        </a>
-      )}
-
-      {revealed && (
-        <a href="/bracket" className={ctaOutline}>
-          Knockout bracket — road to the final 🏆
         </a>
       )}
 

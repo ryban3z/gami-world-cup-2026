@@ -88,19 +88,35 @@ function spine(
   };
 }
 
+// Small helper: find a spine match in the flat column list by external id.
+function findMatch(v: ReturnType<typeof buildBracket>, externalId: string) {
+  for (const c of v.columns) {
+    const m = c.matches.find((x) => x.externalId === externalId);
+    if (m) return m;
+  }
+  return undefined;
+}
+
 describe("buildBracket", () => {
-  it("groups the spine into left/right halves and centre", () => {
+  it("emits a single left→right flow with the final/third as the right-most pair", () => {
     const v = buildBracket([], teams);
-    expect(v.leftColumns.map((c) => c.stage)).toEqual(["r16", "qf", "sf"]);
-    expect(v.rightColumns.map((c) => c.stage)).toEqual(["r16", "qf", "sf"]);
-    expect(v.leftColumns.find((c) => c.stage === "r16")!.matches.length).toBe(4);
+    // No R32 yet → first column is R16; R32 only appears once there are R32 rows.
+    expect(v.columns.map((c) => c.stage)).toEqual(["r16", "qf", "sf"]);
+    expect(v.columns.find((c) => c.stage === "r16")!.matches.length).toBe(8);
     expect(v.final.externalId).toBe("537390");
     expect(v.thirdPlace.externalId).toBe("537389");
   });
 
+  it("orders the R16 column left-half-first (single top-to-bottom flow)", () => {
+    const v = buildBracket([], teams);
+    expect(v.columns.find((c) => c.stage === "r16")!.matches.map((m) => m.externalId)).toEqual([
+      "537375", "537376", "537379", "537380", "537377", "537378", "537381", "537382",
+    ]);
+  });
+
   it("shows placeholders before slots resolve", () => {
     const v = buildBracket([], teams);
-    const r16 = v.leftColumns[0].matches[0];
+    const r16 = v.columns[0].matches[0];
     expect(r16.home.name).toBeNull();
     expect(r16.home.placeholder).toBe("R32 winner");
     expect(v.final.home.placeholder).toBe("SF winner");
@@ -108,26 +124,29 @@ describe("buildBracket", () => {
 
   it("resolves team names, flags and the winner highlight", () => {
     const v = buildBracket(fixtureMatches(), teams);
-    const r16 = v.leftColumns.find((c) => c.stage === "r16")!.matches.find((m) => m.externalId === "537375")!;
+    const r16 = findMatch(v, "537375")!;
     expect(r16.home.name).toBe("Argentina");
     expect(r16.home.flag).toBe("ar.png");
     expect(r16.home.isWinner).toBe(true);
     expect(r16.away.isWinner).toBe(false);
   });
 
-  it("attaches resolved R32 fixtures under their R16 parent, aligned by side", () => {
+  it("drops a resolved R32 into its exact parent-aligned slot", () => {
     const v = buildBracket(fixtureMatches(), teams);
-    const r32col = v.leftColumns.find((c) => c.stage === "r32")!;
-    // 537375 is the first R16 slot (order 0): its home feeder then away feeder lead.
+    const r32col = v.columns.find((c) => c.stage === "r32")!;
+    // 537375 is the first R16 flow slot (index 0): home feeder at slot 0, away at slot 1.
     expect(r32col.matches[0].externalId).toBe("537417"); // Argentina's R32 (home side)
     expect(r32col.matches[1].externalId).toBe("537423"); // Brazil's R32 (away side)
   });
 
-  it("buckets unresolved R32 fixtures as pending", () => {
+  it("keeps unresolved R32 fixtures in the R32 column (no detached bucket)", () => {
     const v = buildBracket(fixtureMatches(), teams);
-    expect(v.pendingR32.map((m) => m.externalId)).toContain("537415");
-    // The resolved ones are not pending.
-    expect(v.pendingR32.map((m) => m.externalId)).not.toContain("537417");
+    const r32col = v.columns.find((c) => c.stage === "r32")!;
+    const ids = r32col.matches.map((m) => m.externalId);
+    expect(ids).toContain("537415"); // pending, still in the bracket
+    expect(ids).toContain("537417"); // resolved
+    expect(r32col.matches).toHaveLength(3); // all three R32 rendered, none dropped
+    expect("pendingR32" in v).toBe(false);
   });
 
   it("surfaces penalty-decided winners", () => {
@@ -147,7 +166,7 @@ describe("buildBracket", () => {
       rosters: [{ user_id: "u1", display_name: "Ada", team_ids: ["TA"] }],
       profiles: [{ id: "u1", display_name: "Ada", avatar_url: " https://pic " }],
     });
-    const r16 = v.leftColumns.find((c) => c.stage === "r16")!.matches.find((m) => m.externalId === "537375")!;
+    const r16 = findMatch(v, "537375")!;
     expect(r16.home.owner).toEqual({ name: "Ada", avatarUrl: "https://pic" });
     expect(r16.away.owner).toBeNull(); // Brazil unowned in this fixture
   });
@@ -157,7 +176,7 @@ describe("buildBracket", () => {
       rosters: [{ user_id: "u1", display_name: "Bo", team_ids: ["TA"] }],
       profiles: [{ id: "u1", display_name: "Bo", avatar_url: null }],
     });
-    const r16 = v.leftColumns.find((c) => c.stage === "r16")!.matches.find((m) => m.externalId === "537375")!;
+    const r16 = findMatch(v, "537375")!;
     expect(r16.home.owner).toEqual({ name: "Bo", avatarUrl: null });
   });
 });
