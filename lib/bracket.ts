@@ -66,3 +66,13 @@ export const THIRD_PLACE_EXTERNAL_ID = "537389";
 export const SPINE_BY_ID: ReadonlyMap<string, BracketSpineNode> = new Map(
   BRACKET_SPINE.map((n) => [n.externalId, n]),
 );
+
+// Single top-to-bottom flow order for a round, for the left→right bracket: the
+// left half (top of the draw) stacked first, then the right half, each by
+// `order`. So R16 reads 537375,537376,537379,537380,537377,537378,537381,537382.
+export function spineFlowOrder(stage: SpineStage): string[] {
+  const rank = (n: BracketSpineNode) => (n.half === "left" ? 0 : 1) * 100 + n.order;
+  return BRACKET_SPINE.filter((n) => n.stage === stage)
+    .sort((a, b) => rank(a) - rank(b))
+    .map((n) => n.externalId);
+}

@@ -19,8 +19,9 @@ function Column({ col }: { col: BracketColumn }) {
   );
 }
 
-function CentreColumn({ final, thirdPlace }: { final: BracketMatchCell; thirdPlace: BracketMatchCell }) {
-  // Crown the champion when the final has a decided winner.
+// Right-most column: the final (with a champion line once decided) stacked above
+// the third-place play-off.
+function FinaleColumn({ final, thirdPlace }: { final: BracketMatchCell; thirdPlace: BracketMatchCell }) {
   const champ =
     final.status === "final"
       ? final.home.isWinner
@@ -50,37 +51,15 @@ function CentreColumn({ final, thirdPlace }: { final: BracketMatchCell; thirdPla
 
 export default function BracketDiagram({ view }: { view: BracketView }) {
   return (
-    <div className="flex flex-col gap-4">
-      {/* The full tree is wider than a phone — scroll it horizontally. The two
-          halves flow inward: left columns L→R, right columns rendered reversed
-          so the semi-finals sit either side of the centred final. */}
-      <div className="-mx-6 overflow-x-auto px-6 pb-2">
-        <div className="flex min-w-max items-stretch gap-3 sm:gap-4">
-          {view.leftColumns.map((c) => (
-            <Column key={`l-${c.stage}`} col={c} />
-          ))}
-          <CentreColumn final={view.final} thirdPlace={view.thirdPlace} />
-          {[...view.rightColumns].reverse().map((c) => (
-            <Column key={`r-${c.stage}`} col={c} />
-          ))}
-        </div>
+    // The full draw is wider than a phone — scroll it horizontally. Columns flow
+    // strictly left→right: R32 → R16 → QF → SF → (Final / Third place).
+    <div className="-mx-6 overflow-x-auto px-6 pb-2">
+      <div className="flex min-w-max items-stretch gap-3 sm:gap-4">
+        {view.columns.map((c) => (
+          <Column key={c.stage} col={c} />
+        ))}
+        <FinaleColumn final={view.final} thirdPlace={view.thirdPlace} />
       </div>
-
-      {view.pendingR32.length > 0 && (
-        <section className="rounded-xl border border-glow bg-panel p-4">
-          <h3 className="mb-3 text-xs font-bold uppercase tracking-wide text-caption">
-            Round of 32 — awaiting result
-          </h3>
-          <p className="mb-3 text-xs text-caption">
-            These ties slot into the bracket above once a winner is decided.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            {view.pendingR32.map((m) => (
-              <BracketMatch key={m.externalId} match={m} />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

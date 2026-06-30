@@ -6,7 +6,7 @@
 // slot held by its winner — so no fragile R32 match-number mapping is needed.
 
 import { type Stage, STAGE_LABELS } from "@/lib/leaderboardView";
-import { BRACKET_SPINE, SPINE_BY_ID, FINAL_EXTERNAL_ID, THIRD_PLACE_EXTERNAL_ID } from "@/lib/bracket";
+import { SPINE_BY_ID, FINAL_EXTERNAL_ID, THIRD_PLACE_EXTERNAL_ID, spineFlowOrder } from "@/lib/bracket";
 
 // ── Structural "lite" inputs (decoupled from Supabase row shapes) ──
 export interface BracketMatchLite {
@@ -67,13 +67,9 @@ export interface BracketColumn {
   matches: BracketMatchCell[]; // top-to-bottom
 }
 export interface BracketView {
-  leftColumns: BracketColumn[]; // [R32, R16, QF, SF] for the top half of the draw
-  rightColumns: BracketColumn[]; // mirror; the component renders these reversed
-  final: BracketMatchCell;
-  thirdPlace: BracketMatchCell;
-  // R32 fixtures not yet resolved (or whose winner isn't placed in an R16 slot
-  // yet), so they can't be slotted into a half. Shown in a holding strip.
-  pendingR32: BracketMatchCell[];
+  columns: BracketColumn[]; // [R32, R16, QF, SF], left→right, each top-to-bottom
+  final: BracketMatchCell; // right-most column…
+  thirdPlace: BracketMatchCell; // …stacked under the final
 }
 
 // What feeds a spine slot, for a friendly placeholder before the team is known.
@@ -157,71 +153,64 @@ export function buildBracket(
     return cellFor(externalId, node.stage, ph, ph);
   };
 
+  // Single left→right flow order for the spine rounds (left half stacked above
+  // the right half), so each round is one top-to-bottom column.
+  const r16Flow = spineFlowOrder("r16"); // 8 ids, defines the R32 slot layout
+  const r16FlowIndex = new Map(r16Flow.map((id, i) => [id, i]));
+
   // ── Round of 32 → Round of 16 attachment (data-driven by winner) ──
-  // For each resolved R32 match, the R16 match that contains its winner is its
-  // parent. We index R16 slots by the team ids that occupy them.
-  const r16Ids = new Set(
-    BRACKET_SPINE.filter((n) => n.stage === "r16").map((n) => n.externalId),
-  );
-  // teamId → R16 external_id holding that team (home or away).
-  const r16ByTeam = new Map<string, string>();
-  for (const id of r16Ids) {
+  // A resolved R32 match's winner occupies exactly one side of one R16 slot, so
+  // it drops into that slot at index `r16FlowIndex*2 + side`. Pending R32 (no
+  // winner yet) fill whatever slots remain, in kickoff order, so all 16 still
+  // render in the bracket and snap into place once they resolve.
+  const r16ByTeam = new Map<string, string>(); // teamId → R16 external_id holding it
+  for (const id of r16Flow) {
     const m = matchById.get(id);
     if (!m) continue;
     if (m.home_team_id) r16ByTeam.set(m.home_team_id, id);
     if (m.away_team_id) r16ByTeam.set(m.away_team_id, id);
   }
-  // r16 external_id → { home: r32 cell, away: r32 cell } aligned to the R16 slot.
-  const r32ByR16 = new Map<string, { home?: BracketMatchCell; away?: BracketMatchCell }>();
-  const pendingR32: BracketMatchCell[] = [];
+
+  const r32Slots: (BracketMatchCell | undefined)[] = new Array(r16Flow.length * 2);
+  const r32Pending: BracketMatchCell[] = [];
   const r32Matches = matches
     .filter((m) => m.stage === "r32")
     .sort((a, b) => msKickoff(a.kickoff_at) - msKickoff(b.kickoff_at));
   for (const m of r32Matches) {
     const cell = cellFor(m.external_id, "r32", "TBD", "TBD");
     const r16Id = m.winner_team_id ? r16ByTeam.get(m.winner_team_id) : undefined;
-    if (!r16Id) {
-      pendingR32.push(cell);
+    const flowIdx = r16Id != null ? r16FlowIndex.get(r16Id) : undefined;
+    if (flowIdx == null) {
+      r32Pending.push(cell);
       continue;
     }
-    const r16 = matchById.get(r16Id)!;
-    const slot = r32ByR16.get(r16Id) ?? {};
-    // Align the R32 under whichever side of the R16 its winner occupies.
-    if (m.winner_team_id === r16.home_team_id) slot.home = cell;
-    else slot.away = cell;
-    r32ByR16.set(r16Id, slot);
+    const r16 = matchById.get(r16Id!)!;
+    const side = m.winner_team_id === r16.home_team_id ? 0 : 1;
+    r32Slots[flowIdx * 2 + side] = cell;
   }
+  // Drop pending matches into the still-empty slots, preserving resolved layout.
+  // (findIndex, not indexOf — the array is sparse and indexOf skips holes.)
+  for (const cell of r32Pending) {
+    const free = r32Slots.findIndex((c) => c === undefined);
+    if (free === -1) break; // shouldn't happen (16 matches, 16 slots)
+    r32Slots[free] = cell;
+  }
+  const r32Column = r32Slots.filter((c): c is BracketMatchCell => c != null);
 
-  // ── Assemble the half columns ──
-  const half = (side: "left" | "right"): BracketColumn[] => {
-    const nodes = BRACKET_SPINE.filter((n) => n.half === side);
-    const r16Nodes = nodes.filter((n) => n.stage === "r16").sort((a, b) => a.order - b.order);
-    const qfNodes = nodes.filter((n) => n.stage === "qf").sort((a, b) => a.order - b.order);
-    const sfNodes = nodes.filter((n) => n.stage === "sf").sort((a, b) => a.order - b.order);
+  const column = (stage: "r16" | "qf" | "sf"): BracketColumn => ({
+    stage,
+    label: STAGE_LABELS[stage],
+    matches: spineFlowOrder(stage).map((id) => spineCell(id)),
+  });
 
-    // R32 column: each R16 parent contributes its [home, away] feeders in order,
-    // keeping the R32 fixtures vertically aligned under their R16 slot.
-    const r32: BracketMatchCell[] = [];
-    for (const n of r16Nodes) {
-      const slot = r32ByR16.get(n.externalId) ?? {};
-      if (slot.home) r32.push(slot.home);
-      if (slot.away) r32.push(slot.away);
-    }
-
-    const cols: BracketColumn[] = [];
-    if (r32.length) cols.push({ stage: "r32", label: STAGE_LABELS.r32, matches: r32 });
-    cols.push({ stage: "r16", label: STAGE_LABELS.r16, matches: r16Nodes.map((n) => spineCell(n.externalId)) });
-    cols.push({ stage: "qf", label: STAGE_LABELS.qf, matches: qfNodes.map((n) => spineCell(n.externalId)) });
-    cols.push({ stage: "sf", label: STAGE_LABELS.sf, matches: sfNodes.map((n) => spineCell(n.externalId)) });
-    return cols;
-  };
+  const columns: BracketColumn[] = [];
+  if (r32Column.length) columns.push({ stage: "r32", label: STAGE_LABELS.r32, matches: r32Column });
+  columns.push(column("r16"), column("qf"), column("sf"));
 
   return {
-    leftColumns: half("left"),
-    rightColumns: half("right"),
+    columns,
     final: cellFor(FINAL_EXTERNAL_ID, "final", PLACEHOLDER.final, PLACEHOLDER.final),
     thirdPlace: cellFor(THIRD_PLACE_EXTERNAL_ID, "third_place", PLACEHOLDER.third_place, PLACEHOLDER.third_place),
-    pendingR32,
   };
 }
 
