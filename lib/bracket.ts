@@ -62,6 +62,36 @@ export const BRACKET_SPINE: BracketSpineNode[] = [
 export const FINAL_EXTERNAL_ID = "537390";
 export const THIRD_PLACE_EXTERNAL_ID = "537389";
 
+// Round-of-32 → Round-of-16 routing, bound to our stored football-data fixture
+// ids. football-data's R32 ids are NOT in bracket/match-number order, so this
+// map (built from the DB's external_id → teams rows + the published WC2026
+// bracket) is the authoritative link. `side` 0 = top/home of the R16 slot, 1 =
+// bottom/away — matching how football-data fills the R16 home/away once the tie
+// resolves (verified against played ties: Paraguay→537375 home, Canada→537376
+// home, Morocco→537376 away). Comments give the FIFA match number + the matchup.
+export interface R32Feed {
+  r16: string;
+  side: 0 | 1;
+}
+export const R32_FEEDS: Record<string, R32Feed> = {
+  "537415": { r16: "537375", side: 0 }, // M74 Germany–Paraguay
+  "537416": { r16: "537375", side: 1 }, // M77 France–Sweden
+  "537417": { r16: "537376", side: 0 }, // M73 South Africa–Canada
+  "537418": { r16: "537376", side: 1 }, // M75 Netherlands–Morocco
+  "537423": { r16: "537377", side: 0 }, // M76 Brazil–Japan
+  "537424": { r16: "537377", side: 1 }, // M78 Ivory Coast–Norway
+  "537425": { r16: "537378", side: 0 }, // M79 Mexico–Ecuador
+  "537426": { r16: "537378", side: 1 }, // M80 England–DR Congo
+  "537419": { r16: "537379", side: 0 }, // M83 Portugal–Croatia
+  "537420": { r16: "537379", side: 1 }, // M84 Spain–Austria
+  "537421": { r16: "537380", side: 0 }, // M81 USA–Bosnia & Herzegovina
+  "537422": { r16: "537380", side: 1 }, // M82 Belgium–Senegal
+  "537427": { r16: "537381", side: 0 }, // M86 Argentina–Cape Verde
+  "537428": { r16: "537381", side: 1 }, // M88 Australia–Egypt
+  "537429": { r16: "537382", side: 0 }, // M85 Switzerland–Algeria
+  "537430": { r16: "537382", side: 1 }, // M87 Colombia–Ghana
+};
+
 // external_id → spine node, for quick lookups in the view layer.
 export const SPINE_BY_ID: ReadonlyMap<string, BracketSpineNode> = new Map(
   BRACKET_SPINE.map((n) => [n.externalId, n]),
