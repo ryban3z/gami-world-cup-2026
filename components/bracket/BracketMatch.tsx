@@ -43,12 +43,16 @@ function TeamRow({ team }: { team: BracketTeamCell }) {
       <span className="min-w-0 flex-1 truncate text-xs">
         {named ? team.name : <span className="italic">{team.placeholder}</span>}
       </span>
-      {team.owner && <OwnerChip owner={team.owner} />}
-      <span className="shrink-0 whitespace-nowrap text-xs tabular-nums text-white">
+      {/* Fixed-width score + owner columns so avatars always sit flush right at
+          the same x, vertically aligned, regardless of the score's width. */}
+      <span className="w-11 shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-white">
         {team.score ?? ""}
         {team.penalties != null && (
           <span className="text-caption"> ({team.penalties})</span>
         )}
+      </span>
+      <span className="flex w-4 shrink-0 justify-end">
+        {team.owner && <OwnerChip owner={team.owner} />}
       </span>
     </div>
   );
