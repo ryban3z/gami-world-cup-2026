@@ -30,7 +30,7 @@ function TeamRow({ team }: { team: BracketTeamCell }) {
   const named = team.name != null;
   return (
     <div
-      className={`flex items-center gap-1.5 px-2 py-1 ${
+      className={`flex h-8 items-center gap-1.5 px-2 ${
         team.isWinner ? "font-bold text-white" : named ? "text-bodytext" : "text-caption"
       }`}
     >
@@ -44,7 +44,7 @@ function TeamRow({ team }: { team: BracketTeamCell }) {
         {named ? team.name : <span className="italic">{team.placeholder}</span>}
       </span>
       {team.owner && <OwnerChip owner={team.owner} />}
-      <span className="w-3 shrink-0 text-right text-xs tabular-nums text-white">
+      <span className="shrink-0 whitespace-nowrap text-xs tabular-nums text-white">
         {team.score ?? ""}
         {team.penalties != null && (
           <span className="text-caption"> ({team.penalties})</span>
