@@ -6,7 +6,7 @@
 // slot held by its winner — so no fragile R32 match-number mapping is needed.
 
 import { type Stage, STAGE_LABELS } from "@/lib/leaderboardView";
-import { SPINE_BY_ID, FINAL_EXTERNAL_ID, THIRD_PLACE_EXTERNAL_ID, spineFlowOrder } from "@/lib/bracket";
+import { SPINE_BY_ID, FINAL_EXTERNAL_ID, THIRD_PLACE_EXTERNAL_ID, spineFlowOrder, R32_FEEDS } from "@/lib/bracket";
 
 // ── Structural "lite" inputs (decoupled from Supabase row shapes) ──
 export interface BracketMatchLite {
@@ -158,42 +158,17 @@ export function buildBracket(
   const r16Flow = spineFlowOrder("r16"); // 8 ids, defines the R32 slot layout
   const r16FlowIndex = new Map(r16Flow.map((id, i) => [id, i]));
 
-  // ── Round of 32 → Round of 16 attachment (data-driven by winner) ──
-  // A resolved R32 match's winner occupies exactly one side of one R16 slot, so
-  // it drops into that slot at index `r16FlowIndex*2 + side`. Pending R32 (no
-  // winner yet) fill whatever slots remain, in kickoff order, so all 16 still
-  // render in the bracket and snap into place once they resolve.
-  const r16ByTeam = new Map<string, string>(); // teamId → R16 external_id holding it
-  for (const id of r16Flow) {
-    const m = matchById.get(id);
-    if (!m) continue;
-    if (m.home_team_id) r16ByTeam.set(m.home_team_id, id);
-    if (m.away_team_id) r16ByTeam.set(m.away_team_id, id);
-  }
-
+  // ── Round of 32 → Round of 16 placement (static, locked routes) ──
+  // Each R32 fixture has a fixed destination in R32_FEEDS, so it lands in its
+  // exact slot at `r16FlowIndex*2 + side` whether or not it's been played — no
+  // guessing for pending ties. (An unmapped id — shouldn't occur — is skipped.)
   const r32Slots: (BracketMatchCell | undefined)[] = new Array(r16Flow.length * 2);
-  const r32Pending: BracketMatchCell[] = [];
-  const r32Matches = matches
-    .filter((m) => m.stage === "r32")
-    .sort((a, b) => msKickoff(a.kickoff_at) - msKickoff(b.kickoff_at));
-  for (const m of r32Matches) {
-    const cell = cellFor(m.external_id, "r32", "TBD", "TBD");
-    const r16Id = m.winner_team_id ? r16ByTeam.get(m.winner_team_id) : undefined;
-    const flowIdx = r16Id != null ? r16FlowIndex.get(r16Id) : undefined;
-    if (flowIdx == null) {
-      r32Pending.push(cell);
-      continue;
-    }
-    const r16 = matchById.get(r16Id!)!;
-    const side = m.winner_team_id === r16.home_team_id ? 0 : 1;
-    r32Slots[flowIdx * 2 + side] = cell;
-  }
-  // Drop pending matches into the still-empty slots, preserving resolved layout.
-  // (findIndex, not indexOf — the array is sparse and indexOf skips holes.)
-  for (const cell of r32Pending) {
-    const free = r32Slots.findIndex((c) => c === undefined);
-    if (free === -1) break; // shouldn't happen (16 matches, 16 slots)
-    r32Slots[free] = cell;
+  for (const m of matches) {
+    if (m.stage !== "r32") continue;
+    const feed = R32_FEEDS[m.external_id];
+    const flowIdx = feed ? r16FlowIndex.get(feed.r16) : undefined;
+    if (feed == null || flowIdx == null) continue;
+    r32Slots[flowIdx * 2 + feed.side] = cellFor(m.external_id, "r32", "TBD", "TBD");
   }
   const r32Column = r32Slots.filter((c): c is BracketMatchCell => c != null);
 
@@ -212,9 +187,4 @@ export function buildBracket(
     final: cellFor(FINAL_EXTERNAL_ID, "final", PLACEHOLDER.final, PLACEHOLDER.final),
     thirdPlace: cellFor(THIRD_PLACE_EXTERNAL_ID, "third_place", PLACEHOLDER.third_place, PLACEHOLDER.third_place),
   };
-}
-
-// Null kickoffs sort last; a missing date shouldn't crash the ordering.
-function msKickoff(s: string | null): number {
-  return s ? new Date(s).getTime() : Number.POSITIVE_INFINITY;
 }

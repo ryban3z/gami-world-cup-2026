@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildBracket, type BracketMatchLite, type BracketTeamLite } from "@/lib/bracketView";
-import { BRACKET_SPINE, SPINE_BY_ID } from "@/lib/bracket";
+import { BRACKET_SPINE, SPINE_BY_ID, R32_FEEDS } from "@/lib/bracket";
 
 // ── Topology sanity: the static spine must be a well-formed split bracket ──
 describe("BRACKET_SPINE topology", () => {
@@ -42,8 +42,24 @@ describe("BRACKET_SPINE topology", () => {
   });
 });
 
-// ── Test fixture: a tiny but complete bracket. Team ids encode their path so the
-// expected propagation is easy to read (e.g. "L-r16a-home").
+// ── R32_FEEDS must cover all 16 ties and fill every R16 slot exactly twice ──
+describe("R32_FEEDS routing", () => {
+  const r16Ids = new Set(BRACKET_SPINE.filter((n) => n.stage === "r16").map((n) => n.externalId));
+
+  it("maps 16 R32 fixtures, each to a real R16 id", () => {
+    const entries = Object.entries(R32_FEEDS);
+    expect(entries).toHaveLength(16);
+    for (const [, feed] of entries) expect(r16Ids.has(feed.r16)).toBe(true);
+  });
+
+  it("gives every R16 exactly two feeders — one side 0, one side 1", () => {
+    for (const r16 of r16Ids) {
+      const feeders = Object.values(R32_FEEDS).filter((f) => f.r16 === r16);
+      expect(feeders.map((f) => f.side).sort()).toEqual([0, 1]);
+    }
+  });
+});
+
 const teams: BracketTeamLite[] = [
   { id: "TA", name: "Argentina", flag_url: "ar.png" },
   { id: "TB", name: "Brazil", flag_url: "br.png" },
@@ -51,16 +67,15 @@ const teams: BracketTeamLite[] = [
   { id: "TD", name: "Denmark", flag_url: "dk.png" },
 ];
 
-// Left-half R16 537375 (Argentina v Brazil); the two R32 matches whose winners
-// are Argentina and Brazil should attach beneath it.
+// A few R32 ties placed by R32_FEEDS, plus their R16. Slot = r16FlowIndex*2+side;
+// the R16 flow order is [537375,537376,537379,537380,537377,537378,537381,537382],
+// so 537415→slot0, 537416→slot1, 537417→slot2.
 function fixtureMatches(): BracketMatchLite[] {
   return [
-    // R32: 537417 won by Argentina, 537423 won by Brazil → both feed R16 537375.
-    r32("537417", "TA", "X1", "TA"),
-    r32("537423", "TB", "X2", "TB"),
-    // An R32 with no winner yet → pending.
-    r32("537415", null, null, null),
-    // R16 537375 holds Argentina (home) & Brazil (away), Argentina advances.
+    r32("537415", "TA", "TB", "TA"), // →537375/0, resolved (Argentina advances)
+    r32("537416", "TC", "TD", null), // →537375/1, PENDING (no winner)
+    r32("537417", "TC", "TB", "TC"), // →537376/0, resolved
+    // R16 537375 holds Argentina (home) & Brazil (away); Argentina advances.
     spine("537375", "r16", "TA", "TB", "TA", 2, 1),
   ];
 }
@@ -131,22 +146,20 @@ describe("buildBracket", () => {
     expect(r16.away.isWinner).toBe(false);
   });
 
-  it("drops a resolved R32 into its exact parent-aligned slot", () => {
+  it("places each R32 in its locked slot/side by external_id, regardless of winner", () => {
     const v = buildBracket(fixtureMatches(), teams);
     const r32col = v.columns.find((c) => c.stage === "r32")!;
-    // 537375 is the first R16 flow slot (index 0): home feeder at slot 0, away at slot 1.
-    expect(r32col.matches[0].externalId).toBe("537417"); // Argentina's R32 (home side)
-    expect(r32col.matches[1].externalId).toBe("537423"); // Brazil's R32 (away side)
+    // Ordered by slot index: 537415 (slot 0), 537416 (slot 1), 537417 (slot 2).
+    expect(r32col.matches.map((m) => m.externalId)).toEqual(["537415", "537416", "537417"]);
   });
 
-  it("keeps unresolved R32 fixtures in the R32 column (no detached bucket)", () => {
+  it("places a pending (unplayed) R32 in its exact slot, not appended/guessed", () => {
     const v = buildBracket(fixtureMatches(), teams);
     const r32col = v.columns.find((c) => c.stage === "r32")!;
-    const ids = r32col.matches.map((m) => m.externalId);
-    expect(ids).toContain("537415"); // pending, still in the bracket
-    expect(ids).toContain("537417"); // resolved
-    expect(r32col.matches).toHaveLength(3); // all three R32 rendered, none dropped
-    expect("pendingR32" in v).toBe(false);
+    // 537416 has no winner but still sits at its locked slot 1 (between 537415 and 537417).
+    expect(r32col.matches[1].externalId).toBe("537416");
+    expect(r32col.matches[1].home.name).toBe("Canada"); // teams resolve even while pending
+    expect("pendingR32" in v).toBe(false); // no detached bucket
   });
 
   it("surfaces penalty-decided winners", () => {
