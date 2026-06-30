@@ -32,10 +32,19 @@ export interface MappedMatch {
   status: MatchStatus;
   homeScore: number | null;
   awayScore: number | null;
+  // Penalty-shootout result, separate from the on-pitch score. Null when the
+  // match wasn't decided on penalties.
+  homePenalties: number | null;
+  awayPenalties: number | null;
   winner: ApiWinner;
 }
 
-// Minimal shape of a football-data match we depend on.
+type ApiScore = { home: number | null; away: number | null };
+
+// Minimal shape of a football-data match we depend on. `penalties` is populated
+// only for shootout knockouts; `fullTime` folds the shootout into the score
+// there (a 1–1 decided 4–3 on pens comes through as fullTime 5–4), so the mapper
+// peels the penalties back out — see mapApiMatch.
 interface ApiMatch {
   id: number;
   utcDate: string | null;
@@ -44,7 +53,11 @@ interface ApiMatch {
   status: string;
   homeTeam: { id: number | null };
   awayTeam: { id: number | null };
-  score: { winner: string | null; fullTime: { home: number | null; away: number | null } };
+  score: {
+    winner: string | null;
+    fullTime: ApiScore;
+    penalties?: ApiScore | null;
+  };
 }
 
 const ext = (id: number | null): string | null => (id == null ? null : String(id));
@@ -55,8 +68,20 @@ const ext = (id: number | null): string | null => (id == null ? null : String(id
 export function mapApiMatch(m: ApiMatch): MappedMatch | null {
   const stage = STAGE_MAP[m.stage];
   if (!stage) return null;
-  const homeScore = m.score?.fullTime?.home ?? null;
-  const awayScore = m.score?.fullTime?.away ?? null;
+  let homeScore = m.score?.fullTime?.home ?? null;
+  let awayScore = m.score?.fullTime?.away ?? null;
+  // A penalty shootout is reported in `score.penalties`, but football-data also
+  // folds it into `fullTime` (1–1 decided 4–3 on pens arrives as fullTime 5–4).
+  // Peel the shootout back out so `homeScore`/`awayScore` carry the on-pitch
+  // result and the pens are reported on their own. Clamp at 0 so an unexpected
+  // feed (fullTime already net of pens) never yields a negative score.
+  const pens = m.score?.penalties;
+  const homePenalties = pens?.home ?? null;
+  const awayPenalties = pens?.away ?? null;
+  if (homePenalties != null && awayPenalties != null && homeScore != null && awayScore != null) {
+    homeScore = Math.max(0, homeScore - homePenalties);
+    awayScore = Math.max(0, awayScore - awayPenalties);
+  }
   let status = STATUS_MAP[m.status] ?? "scheduled";
   // football-data can flip a match to FINISHED minutes before the result is
   // entered (free-tier data lag). A score-less "final" would surface as a
@@ -73,6 +98,8 @@ export function mapApiMatch(m: ApiMatch): MappedMatch | null {
     status,
     homeScore,
     awayScore,
+    homePenalties,
+    awayPenalties,
     winner: (m.score?.winner ?? null) as ApiWinner,
   };
 }

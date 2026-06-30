@@ -22,7 +22,8 @@ describe("mapApiMatch", () => {
     expect(mapApiMatch(groupMatch)).toEqual({
       externalId: "537327", stage: "group", groupLetter: "A",
       homeExternalId: "769", awayExternalId: "774", kickoffAt: "2026-06-11T19:00:00Z",
-      status: "scheduled", homeScore: null, awayScore: null, winner: null,
+      status: "scheduled", homeScore: null, awayScore: null,
+      homePenalties: null, awayPenalties: null, winner: null,
     });
   });
   it("maps a finished match with scores + winner", () => {
@@ -58,6 +59,29 @@ describe("mapApiMatch", () => {
     expect(at("POSTPONED")).toBe("scheduled");
     expect(at("SUSPENDED")).toBe("scheduled");
     expect(at("CANCELLED")).toBe("scheduled");
+  });
+  it("peels a penalty shootout out of the fullTime score", () => {
+    // football-data folds the shootout into fullTime: a 1–1 decided 4–3 on pens
+    // arrives as fullTime 5–4. The on-pitch score must read 1–1 with the pens
+    // reported separately.
+    const m = mapApiMatch({
+      id: 537500, utcDate: "2026-06-29T19:00:00Z", stage: "LAST_32", group: null, status: "FINISHED",
+      homeTeam: { id: 770 }, awayTeam: { id: 771 },
+      score: { winner: "HOME_TEAM", fullTime: { home: 5, away: 4 }, penalties: { home: 4, away: 3 } },
+    })!;
+    expect(m.status).toBe("final");
+    expect(m.homeScore).toBe(1);
+    expect(m.awayScore).toBe(1);
+    expect(m.homePenalties).toBe(4);
+    expect(m.awayPenalties).toBe(3);
+    expect(m.winner).toBe("HOME_TEAM");
+  });
+  it("leaves a non-shootout result untouched with null penalties", () => {
+    const m = mapApiMatch(finishedMatch)!;
+    expect(m.homeScore).toBe(1);
+    expect(m.awayScore).toBe(2);
+    expect(m.homePenalties).toBeNull();
+    expect(m.awayPenalties).toBeNull();
   });
   it("returns null for an unknown stage instead of throwing", () => {
     expect(mapApiMatch({ ...knockoutTbd, stage: "PLAY_OFFS" })).toBeNull();

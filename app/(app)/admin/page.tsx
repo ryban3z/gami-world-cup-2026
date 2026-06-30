@@ -44,7 +44,7 @@ export default async function AdminPage({
       supabase.rpc("draft_state"),
       supabase
         .from("matches")
-        .select("id, stage, group_letter, status, home_score, away_score, winner_team_id, is_manual_override, home:home_team_id(id, name), away:away_team_id(id, name)")
+        .select("id, stage, group_letter, status, home_score, away_score, home_penalties, away_penalties, winner_team_id, is_manual_override, home:home_team_id(id, name), away:away_team_id(id, name)")
         .order("kickoff_at"),
       supabase.from("bonus_categories").select("id, name, resolved_answer").eq("is_active", true).order("name"),
       supabase.from("bonus_predictions").select("category_id, pick_value").eq("is_active", true),
@@ -58,6 +58,7 @@ export default async function AdminPage({
     home_id: m.home?.id ?? null, home_name: m.home?.name ?? "TBD",
     away_id: m.away?.id ?? null, away_name: m.away?.name ?? "TBD",
     home_score: m.home_score, away_score: m.away_score, status: m.status,
+    home_penalties: m.home_penalties ?? null, away_penalties: m.away_penalties ?? null,
     winner_team_id: m.winner_team_id ?? null,
     is_manual_override: m.is_manual_override,
   }));

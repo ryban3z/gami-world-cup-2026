@@ -241,6 +241,22 @@ describe("buildMatchStrip", () => {
     expect(recent[1]).toMatchObject({ homeName: "Argentina", awayName: "Japan", homeScore: 2, awayScore: 1, stageLabel: "Group A" });
   });
 
+  it("carries the penalty-shootout score through to the strip item", () => {
+    const { recent } = buildMatchStrip(
+      [
+        match("pens", "final", "2026-06-29T18:00:00Z", {
+          stage: "r32", group_letter: null,
+          home_score: 1, away_score: 1, home_penalties: 4, away_penalties: 3,
+        }),
+        match("reg", "final", "2026-06-28T18:00:00Z", { home_score: 2, away_score: 0 }),
+      ],
+      teams,
+    );
+    expect(recent[0]).toMatchObject({ id: "pens", homeScore: 1, awayScore: 1, homePenalties: 4, awayPenalties: 3 });
+    // A non-shootout result reports null pens, not 0.
+    expect(recent[1]).toMatchObject({ id: "reg", homePenalties: null, awayPenalties: null });
+  });
+
   it("honours recent/upcoming counts", () => {
     const ms = [
       match("a", "final", "2026-06-01T00:00:00Z"),

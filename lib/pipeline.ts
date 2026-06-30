@@ -81,7 +81,14 @@ export async function runIngest() {
     const teamFill = { home_team_id: homeId, away_team_id: awayId, kickoff_at: m.kickoffAt, updated_at: now };
     const scoreFields = overridden.has(m.externalId)
       ? {}
-      : { status: m.status, home_score: m.homeScore, away_score: m.awayScore, winner_team_id: winnerId };
+      : {
+          status: m.status,
+          home_score: m.homeScore,
+          away_score: m.awayScore,
+          home_penalties: m.homePenalties,
+          away_penalties: m.awayPenalties,
+          winner_team_id: winnerId,
+        };
 
     if (knownExt.has(m.externalId)) {
       await db.from("matches").update({ ...teamFill, ...scoreFields }).eq("external_id", m.externalId);

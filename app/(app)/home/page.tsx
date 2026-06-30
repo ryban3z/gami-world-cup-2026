@@ -61,7 +61,7 @@ export default async function HomePage({
     supabase
       .from("matches")
       .select(
-        "id, stage, group_letter, home_team_id, away_team_id, kickoff_at, home_score, away_score, winner_team_id, status",
+        "id, stage, group_letter, home_team_id, away_team_id, kickoff_at, home_score, away_score, home_penalties, away_penalties, winner_team_id, status",
       ),
     supabase.from("bonus_categories").select("id, key").eq("is_active", true),
     supabase

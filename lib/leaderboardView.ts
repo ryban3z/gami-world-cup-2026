@@ -41,6 +41,8 @@ interface MatchLite {
   id: string; stage: Stage; group_letter: string | null;
   home_team_id: string | null; away_team_id: string | null;
   kickoff_at: string | null; home_score: number | null; away_score: number | null;
+  // Penalty-shootout score, null when the match wasn't decided on penalties.
+  home_penalties?: number | null; away_penalties?: number | null;
   winner_team_id: string | null; status: "scheduled" | "live" | "final";
 }
 
@@ -68,6 +70,8 @@ export interface MatchStripItem {
   homeName: string; homeFlag: string | null; homeOwner: OwnerBadge | null;
   awayName: string; awayFlag: string | null; awayOwner: OwnerBadge | null;
   kickoffAt: string | null; homeScore: number | null; awayScore: number | null;
+  // Penalty-shootout score, surfaced beneath the result; null = no shootout.
+  homePenalties: number | null; awayPenalties: number | null;
   status: "scheduled" | "live" | "final";
 }
 
@@ -302,6 +306,8 @@ export function buildMatchStrip(
       kickoffAt: m.kickoff_at,
       homeScore: m.home_score,
       awayScore: m.away_score,
+      homePenalties: m.home_penalties ?? null,
+      awayPenalties: m.away_penalties ?? null,
       status: m.status,
     };
   };
