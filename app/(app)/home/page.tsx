@@ -255,6 +255,12 @@ export default async function HomePage({
         </a>
       )}
 
+      {revealed && (
+        <a href="/bracket" className={ctaOutline}>
+          Knockout bracket — road to the final 🏆
+        </a>
+      )}
+
       {state?.is_admin && (
         <a
           href="/admin"
