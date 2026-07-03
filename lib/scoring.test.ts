@@ -48,6 +48,33 @@ describe("deriveStandings", () => {
     expect(byId["Z"].furthest_stage).toBe("r32"); // undrafted but qualified
     expect(byId["J"].furthest_stage).toBe("r32");
   });
+
+  // Winning a knockout match advances a team to the next round immediately, even
+  // before the results feed populates that round's fixture. Otherwise a side that
+  // just won its R32 game sits at furthest_stage 'r32' (0 ladder points) until the
+  // R16 bracket resolves in the feed — the "Portugal won but no points" bug.
+  it("promotes a knockout-match winner to the next stage before the fixture exists", () => {
+    const won = deriveStandings([
+      M({ stage: "r32", home_team_id: "P", away_team_id: "Q", winner_team_id: "P", status: "final" }),
+    ]);
+    const p = won.find((s) => s.team_id === "P")!;
+    expect(p.furthest_stage).toBe("r16"); // advanced, not stuck at r32
+    expect(p.is_eliminated).toBe(false);
+    // The loser stays at r32 and is out.
+    const q = won.find((s) => s.team_id === "Q")!;
+    expect(q).toMatchObject({ furthest_stage: "r32", is_eliminated: true });
+  });
+
+  // Promotion must not mask a later loss: winning R32 then losing the actual R16
+  // fixture leaves the team out at r16, regardless of match ordering.
+  it("a promoted team that later loses its next fixture is eliminated there", () => {
+    const rows = deriveStandings([
+      M({ stage: "r16", home_team_id: "P", away_team_id: "R", winner_team_id: "R", status: "final" }),
+      M({ stage: "r32", home_team_id: "P", away_team_id: "Q", winner_team_id: "P", status: "final" }),
+    ]);
+    const p = rows.find((s) => s.team_id === "P")!;
+    expect(p).toMatchObject({ furthest_stage: "r16", is_eliminated: true });
+  });
 });
 
 // A complete Group A bar GA's last game: GA & GD have clinched the top two
