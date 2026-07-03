@@ -12,6 +12,17 @@ const STAGE_RANK: Record<MatchStage, number> = {
   group: 0, r32: 1, r16: 2, qf: 3, sf: 4, third_place: 4, final: 5,
 };
 
+// The stage a team reaches by *winning* a knockout match. Winning is what
+// advances a team, so we credit the next round on the win itself — before the
+// results feed populates that round's fixture. football-data.org fills in a
+// knockout fixture's two slots only after the previous round finishes, so a
+// side that has just won its R32 match would otherwise sit at furthest_stage
+// 'r32' (worth 0 ladder points) until the R16 bracket resolves. (final has no
+// next round; third_place is a consolation branch and is skipped entirely.)
+const NEXT_STAGE: Partial<Record<MatchStage, MatchStage>> = {
+  r32: "r16", r16: "qf", qf: "sf", sf: "final",
+};
+
 export interface MatchRow {
   external_id: string;
   stage: MatchStage;
@@ -118,9 +129,6 @@ export function deriveGroupQualified(matches: MatchRow[]): Set<string> {
 
 export function deriveStandings(matches: MatchRow[]): StandingRow[] {
   const groupQualified = deriveGroupQualified(matches);
-  const acc = new Map<string, { stage: MatchStage; match: MatchRow }>();
-  const championOf = (m: MatchRow) =>
-    m.stage === "final" && m.status === "final" ? m.winner_team_id : null;
   let champion: string | null = null;
 
   // A team's group is finished once every group-stage match in its letter is
@@ -133,21 +141,48 @@ export function deriveStandings(matches: MatchRow[]): StandingRow[] {
     groupFinished.set(m.group_letter, finished && m.status === "final");
   }
 
+  // Furthest stage each team has reached: the highest stage it either appears in
+  // or is promoted into by winning a knockout match (see NEXT_STAGE). Tracking a
+  // stage rank rather than a specific match keeps this independent of match
+  // ordering — elimination is decided separately below by re-scanning.
+  const reached = new Map<string, MatchStage>();
+  const groupLetter = new Map<string, string | null>();
+  const bump = (team: string, stage: MatchStage, letter: string | null) => {
+    const cur = reached.get(team);
+    if (!cur || STAGE_RANK[stage] > STAGE_RANK[cur]) reached.set(team, stage);
+    if (!groupLetter.has(team)) groupLetter.set(team, letter);
+  };
+
   for (const m of matches) {
-    const c = championOf(m);
-    if (c) champion = c;
+    if (m.stage === "final" && m.status === "final" && m.winner_team_id) champion = m.winner_team_id;
     if (m.stage === "third_place") continue; // never advances furthest beyond sf
     for (const team of [m.home_team_id, m.away_team_id]) {
       if (!team) continue;
-      const cur = acc.get(team);
-      if (!cur || STAGE_RANK[m.stage] > STAGE_RANK[cur.stage]) {
-        acc.set(team, { stage: m.stage, match: m });
+      bump(team, m.stage, m.group_letter);
+      // Won this knockout match → reached the next round even if the feed hasn't
+      // populated that fixture yet.
+      if (m.status === "final" && m.winner_team_id === team) {
+        const next = NEXT_STAGE[m.stage];
+        if (next) bump(team, next, m.group_letter);
       }
     }
   }
 
+  // A knockout team is out once it has *lost* a final match at its furthest
+  // stage; a stage it was only promoted into (no fixture played there yet) is
+  // not an exit. Re-scan rather than trust one stored match so the verdict never
+  // depends on match order.
+  const lostFinalAt = (team: string, stage: MatchStage) =>
+    matches.some(
+      (m) =>
+        m.stage === stage &&
+        m.status === "final" &&
+        (m.home_team_id === team || m.away_team_id === team) &&
+        m.winner_team_id !== team,
+    );
+
   const rows: StandingRow[] = [];
-  for (const [team_id, { stage, match }] of acc) {
+  for (const [team_id, stage] of reached) {
     const is_champion = team_id === champion;
     const qualified =
       groupQualified.has(team_id) || STAGE_RANK[stage] >= STAGE_RANK["r32"];
@@ -158,8 +193,8 @@ export function deriveStandings(matches: MatchRow[]): StandingRow[] {
     const is_eliminated =
       !is_champion &&
       (stage !== "group"
-        ? match.status === "final" && match.winner_team_id !== team_id
-        : !qualified && (groupFinished.get(match.group_letter ?? "") ?? false));
+        ? lostFinalAt(team_id, stage)
+        : !qualified && (groupFinished.get(groupLetter.get(team_id) ?? "") ?? false));
     rows.push({ team_id, furthest_stage: stage, is_eliminated, is_champion, qualified });
   }
   return rows;
