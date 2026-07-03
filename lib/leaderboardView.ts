@@ -47,7 +47,11 @@ interface MatchLite {
 }
 
 export interface LeaderTeamPoints {
-  name: string; flagUrl: string | null; phase: "group" | "knockout"; points: number;
+  name: string; flagUrl: string | null; points: number;
+  // Which ownership phases earned this manager points for the team. A team kept
+  // through the knockout swap earns in both — collapsed to a single row so the
+  // team never appears twice in the breakdown.
+  phases: ("group" | "knockout")[];
 }
 export interface LeaderRow {
   rank: number; userId: string; displayName: string; isSelf: boolean;
@@ -98,17 +102,28 @@ export function buildLeaderboard(
   const rows = profiles.map((p) => {
     const s = scoreByUser.get(p.id);
     const b = s?.breakdown ?? emptyBreakdown();
-    const byTeam: LeaderTeamPoints[] = b.by_team
-      .map((bt) => {
+    // Collapse a team's group- and knockout-phase rows into one: sum the points
+    // and remember which phases contributed (kept teams earn in both). Preserves
+    // first-seen order so the points sort below is stable.
+    const merged = new Map<string, LeaderTeamPoints>();
+    for (const bt of b.by_team) {
+      const existing = merged.get(bt.team);
+      if (existing) {
+        existing.points += bt.points;
+        if (!existing.phases.includes(bt.phase)) existing.phases.push(bt.phase);
+      } else {
         const t = teamById.get(bt.team);
-        return {
+        merged.set(bt.team, {
           name: t?.name ?? "—",
           flagUrl: t?.flag_url ?? null,
-          phase: bt.phase,
           points: bt.points,
-        };
-      })
-      .sort((a, b2) => b2.points - a.points);
+          phases: [bt.phase],
+        });
+      }
+    }
+    const byTeam: LeaderTeamPoints[] = [...merged.values()].sort(
+      (a, b2) => b2.points - a.points || a.name.localeCompare(b2.name),
+    );
     const avatarUrl = p.avatar_url?.trim() || null;
     return {
       userId: p.id,
