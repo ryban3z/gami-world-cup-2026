@@ -76,6 +76,21 @@ describe("mapApiMatch", () => {
     expect(m.awayPenalties).toBe(3);
     expect(m.winner).toBe("HOME_TEAM");
   });
+  it("derives the shootout winner from the pens when the feed reports DRAW", () => {
+    // Free-tier lag can leave a penalty-decided knockout with score.winner
+    // "DRAW"/null. The pens are definitive (they can't tie), so the mapper must
+    // resolve the winner from them — otherwise the actual winner is stranded
+    // with no winner_team_id and gets wrongly marked eliminated downstream.
+    const drawFeed = {
+      id: 537501, utcDate: "2026-06-29T19:00:00Z", stage: "LAST_32", group: null, status: "FINISHED",
+      homeTeam: { id: 770 }, awayTeam: { id: 771 },
+      score: { winner: "DRAW", fullTime: { home: 5, away: 4 }, penalties: { home: 4, away: 3 } },
+    };
+    expect(mapApiMatch(drawFeed)!.winner).toBe("HOME_TEAM");
+    // ...and the away side when they take the shootout.
+    const awayPens = { ...drawFeed, score: { winner: null, fullTime: { home: 4, away: 5 }, penalties: { home: 3, away: 4 } } };
+    expect(mapApiMatch(awayPens)!.winner).toBe("AWAY_TEAM");
+  });
   it("leaves a non-shootout result untouched with null penalties", () => {
     const m = mapApiMatch(finishedMatch)!;
     expect(m.homeScore).toBe(1);

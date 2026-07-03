@@ -71,8 +71,29 @@ describe("buildLeaderboard", () => {
     );
     const ada = rows.find((r) => r.displayName === "Ada")!;
     expect(ada.byTeam).toEqual([
-      { name: "Japan", flagUrl: "jp.png", phase: "knockout", points: 8 },
-      { name: "Argentina", flagUrl: "ar.png", phase: "group", points: 5 },
+      { name: "Japan", flagUrl: "jp.png", phases: ["knockout"], points: 8 },
+      { name: "Argentina", flagUrl: "ar.png", phases: ["group"], points: 5 },
+    ]);
+  });
+
+  it("collapses a team's group + knockout rows into one, summing points", () => {
+    const rows = buildLeaderboard(
+      [
+        score("u1", 15, [
+          { team: "t1", phase: "group", points: 7 },
+          { team: "t1", phase: "knockout", points: 6 },
+          { team: "t2", phase: "group", points: 2 },
+        ]),
+      ],
+      profiles,
+      teams,
+      "u1",
+    );
+    const ada = rows.find((r) => r.displayName === "Ada")!;
+    // Argentina appears once (7 + 6 = 13), tagged with both phases.
+    expect(ada.byTeam).toEqual([
+      { name: "Argentina", flagUrl: "ar.png", phases: ["group", "knockout"], points: 13 },
+      { name: "Japan", flagUrl: "jp.png", phases: ["group"], points: 2 },
     ]);
   });
 

@@ -82,6 +82,16 @@ export function mapApiMatch(m: ApiMatch): MappedMatch | null {
     homeScore = Math.max(0, homeScore - homePenalties);
     awayScore = Math.max(0, awayScore - awayPenalties);
   }
+  // A shootout always produces a winner. football-data usually reports it in
+  // `score.winner`, but the free tier can lag and leave a penalty-decided
+  // knockout as "DRAW"/null — which strands the real winner with a null
+  // winner_team_id downstream: deriveStandings then reads a level knockout as a
+  // loss for *both* sides (marked eliminated, never advanced). When a shootout
+  // score is present, trust it over `score.winner` — penalties can't tie.
+  let winner = (m.score?.winner ?? null) as ApiWinner;
+  if (homePenalties != null && awayPenalties != null && homePenalties !== awayPenalties) {
+    winner = homePenalties > awayPenalties ? "HOME_TEAM" : "AWAY_TEAM";
+  }
   let status = STATUS_MAP[m.status] ?? "scheduled";
   // football-data can flip a match to FINISHED minutes before the result is
   // entered (free-tier data lag). A score-less "final" would surface as a
@@ -100,7 +110,7 @@ export function mapApiMatch(m: ApiMatch): MappedMatch | null {
     awayScore,
     homePenalties,
     awayPenalties,
-    winner: (m.score?.winner ?? null) as ApiWinner,
+    winner,
   };
 }
 

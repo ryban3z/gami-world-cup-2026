@@ -66,7 +66,13 @@ export default function LeaderboardTable({
                           <img src={t.flagUrl} alt="" className="h-4 w-6 rounded-sm object-cover" />
                         )}
                         <span className="flex-1 text-white">{t.name}</span>
-                        <span className="text-xs text-caption">{t.phase === "group" ? "group" : "KO"}</span>
+                        <span className="text-xs text-caption">
+                          {t.phases.includes("group") && t.phases.includes("knockout")
+                            ? "group + KO"
+                            : t.phases.includes("knockout")
+                              ? "KO"
+                              : "group"}
+                        </span>
                         <span className="font-bold text-gold">+{t.points}</span>
                       </li>
                     ))}
