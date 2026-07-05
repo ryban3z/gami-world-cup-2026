@@ -6,6 +6,7 @@ import PhaseBanner from "@/components/PhaseBanner";
 import ConfirmAction from "@/components/admin/ConfirmAction";
 import MatchOverride, { type OverrideMatch } from "@/components/admin/MatchOverride";
 import BonusResolve, { type ResolveCategory } from "@/components/admin/BonusResolve";
+import KnockoutTiebreak, { type TiebreakStanding } from "@/components/admin/KnockoutTiebreak";
 import SyncedAt from "@/components/admin/SyncedAt";
 import {
   openRegistration,
@@ -38,8 +39,14 @@ export default async function AdminPage({
     .single();
   if (!me?.is_admin) redirect("/home");
 
-  const [{ data: cfg }, { data: draft }, { data: matchRows }, { data: cats }, { data: preds }] =
-    await Promise.all([
+  const [
+    { data: cfg },
+    { data: draft },
+    { data: matchRows },
+    { data: cats },
+    { data: preds },
+    { data: tiebreakRows },
+  ] = await Promise.all([
       supabase.from("game_config").select("registration_open, predictions_open, last_results_sync_at").eq("id", 1).single(),
       supabase.rpc("draft_state"),
       supabase
@@ -48,7 +55,9 @@ export default async function AdminPage({
         .order("kickoff_at"),
       supabase.from("bonus_categories").select("id, name, resolved_answer").eq("is_active", true).order("name"),
       supabase.from("bonus_predictions").select("category_id, pick_value").eq("is_active", true),
+      supabase.rpc("knockout_tiebreak_standings"),
     ]);
+  const tiebreakStandings = (tiebreakRows as TiebreakStanding[] | null) ?? [];
 
   const lastSync = cfg?.last_results_sync_at ?? null;
   const overrideMatches: OverrideMatch[] = (matchRows ?? []).map((m: any) => ({
@@ -173,6 +182,8 @@ export default async function AdminPage({
           />
         </section>
       )}
+
+      {phase === "knockout_realloc" && <KnockoutTiebreak standings={tiebreakStandings} />}
 
       {phase === "knockout_realloc" && (
         <section className="rounded-xl border border-gold/40 bg-panel p-4">
