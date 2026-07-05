@@ -100,6 +100,10 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     a: "Every correct bonus pick (Golden Boot, Golden Ball, tournament winner, and the rest) is worth +4. You lock your picks before kickoff, and only the correct ones score — there's no penalty for a miss.",
   },
   {
+    q: "How is the Wooden Spoon (worst team) decided?",
+    a: "It goes to the team that finishes the group stage with the fewest points (3 for a win, 1 for a draw). If teams are level on points, worst goal difference decides it; if they're still tied, the managers vote and the admin sets the result. Whoever picked that team scores the usual +4.",
+  },
+  {
     q: "Can I change my bonus picks after I submit them?",
     a: "Your picks are freely editable right up until they lock the evening before the first match. After that they're frozen for the whole group stage — the only change allowed is the one-time wildcard.",
   },
