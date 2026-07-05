@@ -151,7 +151,7 @@ Exact games, format, and point values are **TBD** — captured here as a directi
 7. Most Assists — Playmaker *(free text)* — added 2026-06-04 (pool extra, not an official FIFA award)
 8. Wooden Spoon — Worst Team *(team pick)* — added 2026-06-04
 
-> **Wooden Spoon resolution rule (2026-06-08):** the recipient is the team that finishes with the **fewest points** (league points: 3 win / 1 draw / 0 loss). If multiple teams tie on the lowest, the **managers vote** to choose which one is the wooden spoon; the admin then resolves the category to that team. (Goal difference is deliberately *not* used as the tiebreak — a manager vote keeps it social.)
+> **Wooden Spoon resolution rule (revised 2026-07-05):** the recipient is the team that finishes with the **fewest group-stage points** (league points: 3 win / 1 draw / 0 loss), tiebroken by **worst goal difference**. If teams are still tied on both points *and* goal difference, the **managers vote** to choose which one is the wooden spoon; the admin then resolves the category to that team. The `/admin` "Resolve bonus categories" panel computes and surfaces the current worst team (or the tied set needing a vote) via `lib/woodenSpoonView.ts`, prefilling the answer when it's unambiguous. *(Supersedes the 2026-06-08 rule, which used points then a straight vote and deliberately excluded goal difference.)*
 
 ### Results Data Source (validated 2026-06-02)
 

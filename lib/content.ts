@@ -79,7 +79,7 @@ export const BONUS_AWARD_INFO: Record<string, string> = {
   most_assists: "Most assists across the tournament — a Gami-pool extra, not an official FIFA award.",
   tournament_winner: "The team that lifts the trophy.",
   runner_up: "The team that loses the final.",
-  wooden_spoon: "The team that finishes with the fewest points — managers vote to break any tie.",
+  wooden_spoon: "The worst team — fewest group-stage points, then worst goal difference; managers vote to break any remaining tie.",
 };
 
 // FAQ shown on the logged-in /faq page (linked from the bottom of /home).
@@ -98,6 +98,10 @@ export const FAQ_ENTRIES: FaqEntry[] = [
   {
     q: "How do bonus predictions score?",
     a: "Every correct bonus pick (Golden Boot, Golden Ball, tournament winner, and the rest) is worth +4. You lock your picks before kickoff, and only the correct ones score — there's no penalty for a miss.",
+  },
+  {
+    q: "How is the Wooden Spoon (worst team) decided?",
+    a: "It goes to the team that finishes the group stage with the fewest points (3 for a win, 1 for a draw). If teams are level on points, worst goal difference decides it; if they're still tied, the managers vote and the admin sets the result. Whoever picked that team scores the usual +4.",
   },
   {
     q: "Can I change my bonus picks after I submit them?",

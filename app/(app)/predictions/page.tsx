@@ -27,7 +27,7 @@ export default async function PredictionsPage({
     supabase.from("game_config").select("predictions_open, predictions_locked_at").eq("id", 1).single(),
     supabase.from("bonus_categories").select("id, key, name").eq("is_active", true).order("name"),
     supabase.from("teams").select("id, name").order("name"),
-    supabase.from("bonus_predictions").select("user_id, category_id, pick_slot, pick_value"),
+    supabase.from("bonus_predictions").select("user_id, category_id, pick_slot, pick_value, is_active, superseded_by"),
     supabase.from("profiles").select("id, display_name"),
   ]);
 
@@ -39,7 +39,8 @@ export default async function PredictionsPage({
   // Caller's own picks, keyed for prefilling the form.
   const picksByKey: Record<string, string> = {};
   for (const p of allPicks) {
-    if (p.user_id === user.id) picksByKey[`${p.category_id}_${p.pick_slot}`] = p.pick_value;
+    if (p.user_id === user.id && p.is_active)
+      picksByKey[`${p.category_id}_${p.pick_slot}`] = p.pick_value;
   }
   const nameById: Record<string, string> = {};
   for (const pr of profiles ?? []) nameById[pr.id] = pr.display_name;

@@ -10,9 +10,13 @@ interface Pick {
   category_id: string;
   pick_slot: number;
   pick_value: string;
+  is_active: boolean;
+  superseded_by: string | null;
 }
 
 // Read-only reveal after lock: one card per category, each player's picks listed.
+// A pick changed by a wildcard shows the dropped pick struck through with its
+// replacement, so it's clear what was swapped rather than silently updated.
 export default function RevealPicks({
   categories,
   picks,
@@ -25,13 +29,20 @@ export default function RevealPicks({
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {categories.map((c) => {
-        const rows = picks
-          .filter((p) => p.category_id === c.id)
-          .sort((a, b) => a.pick_slot - b.pick_slot);
-        const byUser = new Map<string, string[]>();
+        const rows = picks.filter((p) => p.category_id === c.id);
+        // The pick a wildcard replaced (inactive + superseded), keyed by
+        // user+slot so we can render it struck through next to the new pick.
+        const droppedBySlot = new Map<string, string>();
         for (const p of rows) {
-          if (!byUser.has(p.user_id)) byUser.set(p.user_id, []);
-          byUser.get(p.user_id)!.push(p.pick_value);
+          if (!p.is_active && p.superseded_by)
+            droppedBySlot.set(`${p.user_id}_${p.pick_slot}`, p.pick_value);
+        }
+        // Active picks are the current answers, listed per user in slot order.
+        const activeByUser = new Map<string, Pick[]>();
+        for (const p of rows) {
+          if (!p.is_active) continue;
+          if (!activeByUser.has(p.user_id)) activeByUser.set(p.user_id, []);
+          activeByUser.get(p.user_id)!.push(p);
         }
         return (
           <div key={c.id} className="rounded-xl border border-glow bg-panel p-4">
@@ -40,13 +51,36 @@ export default function RevealPicks({
               <p className="mt-0.5 text-xs text-caption">{BONUS_AWARD_INFO[c.key]}</p>
             )}
             <ul className="mt-2 flex flex-col gap-1 text-sm">
-              {[...byUser.entries()].map(([uid, vals]) => (
+              {[...activeByUser.entries()].map(([uid, userPicks]) => (
                 <li key={uid} className="flex justify-between gap-2">
                   <span className="text-caption">{nameById[uid] ?? "player"}</span>
-                  <span className="text-right text-white">{vals.join(", ")}</span>
+                  <span className="flex flex-wrap justify-end gap-x-1 text-right text-white">
+                    {userPicks
+                      .sort((a, b) => a.pick_slot - b.pick_slot)
+                      .map((p, i) => {
+                        const dropped = droppedBySlot.get(`${uid}_${p.pick_slot}`);
+                        return (
+                          <span key={p.pick_slot} className="whitespace-nowrap">
+                            {i > 0 && <span className="text-caption">, </span>}
+                            {dropped && (
+                              <>
+                                <span className="text-caption line-through">{dropped}</span>{" "}
+                                <span className="text-caption">→</span>{" "}
+                              </>
+                            )}
+                            {p.pick_value}
+                            {dropped && (
+                              <span className="ml-1 rounded bg-gold/20 px-1 text-[10px] font-bold uppercase text-gold">
+                                wildcard
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })}
+                  </span>
                 </li>
               ))}
-              {byUser.size === 0 && <li className="text-caption">No picks.</li>}
+              {activeByUser.size === 0 && <li className="text-caption">No picks.</li>}
             </ul>
           </div>
         );
