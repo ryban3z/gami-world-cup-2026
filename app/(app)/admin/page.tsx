@@ -6,8 +6,8 @@ import PhaseBanner from "@/components/PhaseBanner";
 import ConfirmAction from "@/components/admin/ConfirmAction";
 import MatchOverride, { type OverrideMatch } from "@/components/admin/MatchOverride";
 import BonusResolve, { type ResolveCategory } from "@/components/admin/BonusResolve";
-import KnockoutTiebreak, { type TiebreakStanding } from "@/components/admin/KnockoutTiebreak";
 import SyncedAt from "@/components/admin/SyncedAt";
+import { woodenSpoonStandings, type SpoonMatch } from "@/lib/woodenSpoonView";
 import {
   openRegistration,
   closeRegistration,
@@ -39,25 +39,17 @@ export default async function AdminPage({
     .single();
   if (!me?.is_admin) redirect("/home");
 
-  const [
-    { data: cfg },
-    { data: draft },
-    { data: matchRows },
-    { data: cats },
-    { data: preds },
-    { data: tiebreakRows },
-  ] = await Promise.all([
+  const [{ data: cfg }, { data: draft }, { data: matchRows }, { data: cats }, { data: preds }] =
+    await Promise.all([
       supabase.from("game_config").select("registration_open, predictions_open, last_results_sync_at").eq("id", 1).single(),
       supabase.rpc("draft_state"),
       supabase
         .from("matches")
         .select("id, stage, group_letter, status, home_score, away_score, home_penalties, away_penalties, winner_team_id, is_manual_override, home:home_team_id(id, name), away:away_team_id(id, name)")
         .order("kickoff_at"),
-      supabase.from("bonus_categories").select("id, name, resolved_answer").eq("is_active", true).order("name"),
+      supabase.from("bonus_categories").select("id, key, name, resolved_answer").eq("is_active", true).order("name"),
       supabase.from("bonus_predictions").select("category_id, pick_value").eq("is_active", true),
-      supabase.rpc("knockout_tiebreak_standings"),
     ]);
-  const tiebreakStandings = (tiebreakRows as TiebreakStanding[] | null) ?? [];
 
   const lastSync = cfg?.last_results_sync_at ?? null;
   const overrideMatches: OverrideMatch[] = (matchRows ?? []).map((m: any) => ({
@@ -78,9 +70,18 @@ export default async function AdminPage({
     suggestionsByCat.set(p.category_id, set);
   }
   const resolveCategories: ResolveCategory[] = (cats ?? []).map((c: any) => ({
-    id: c.id, name: c.name, resolved_answer: c.resolved_answer ?? null,
+    id: c.id, key: c.key, name: c.name, resolved_answer: c.resolved_answer ?? null,
     suggestions: [...(suggestionsByCat.get(c.id) ?? [])].sort(),
   }));
+  // Computed wooden-spoon standings (worst by fewest points → goal difference)
+  // to guide resolving the "Worst Team" category.
+  const spoonMatches: SpoonMatch[] = (matchRows ?? []).map((m: any) => ({
+    stage: m.stage, status: m.status,
+    home_id: m.home?.id ?? null, home_name: m.home?.name ?? null,
+    away_id: m.away?.id ?? null, away_name: m.away?.name ?? null,
+    home_score: m.home_score, away_score: m.away_score,
+  }));
+  const spoonStandings = woodenSpoonStandings(spoonMatches);
 
   const state = draft as { phase: GamePhase; current_user_name: string | null } | null;
   const phase: GamePhase = state?.phase ?? "registration";
@@ -183,8 +184,6 @@ export default async function AdminPage({
         </section>
       )}
 
-      {phase === "knockout_realloc" && <KnockoutTiebreak standings={tiebreakStandings} />}
-
       {phase === "knockout_realloc" && (
         <section className="rounded-xl border border-gold/40 bg-panel p-4">
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-gold">Knockout swap</h2>
@@ -216,7 +215,7 @@ export default async function AdminPage({
         </p>
       </section>
 
-      <BonusResolve categories={resolveCategories} />
+      <BonusResolve categories={resolveCategories} woodenSpoonStandings={spoonStandings} />
       <MatchOverride matches={overrideMatches} />
     </main>
   );

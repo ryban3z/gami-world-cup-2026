@@ -87,21 +87,6 @@ export async function resolveKnockoutRealloc() {
   done();
 }
 
-// Record a managers'-vote tiebreak for one manager (lower rank picks earlier).
-// Only breaks a genuine points+goal-difference tie in the knockout pick order;
-// it's read at resolve, so no recalc is needed here.
-export async function setKnockoutTiebreak(formData: FormData) {
-  await requireAdmin();
-  const supabase = createClient();
-  const raw = String(formData.get("rank") ?? "").trim();
-  const { error } = await supabase.rpc("set_knockout_tiebreak", {
-    p_user_id: String(formData.get("user_id")),
-    p_rank: raw === "" ? 0 : Number(raw),
-  });
-  if (error) back(error.message);
-  done();
-}
-
 export async function refreshResults() {
   await requireAdmin();
   // Server-side cooldown — can't be bypassed by double-clicking the button.
