@@ -49,14 +49,17 @@ export default function DraftStatus({ state }: { state: DraftState }) {
     );
   }
 
-  // group_locked and beyond (the draft phase is handled by TurnBanner on /home)
+  // group_locked and beyond (the draft phase is handled by TurnBanner on /home).
+  // knockout_locked shows no status line — the phase banner and the "final is
+  // here" home banner cover it.
   const message =
     phase === "group_locked"
       ? "Group stage underway — every goal counts. ⚽"
       : phase === "knockout_realloc"
         ? "Knockout swap window's open. 🔄"
-        : phase === "knockout_locked"
-          ? "Knockout football is here. ⚡"
-          : "Full time — champions crowned. 🏆";
+        : phase === "complete"
+          ? "Full time — champions crowned. 🏆"
+          : null;
+  if (!message) return null;
   return <p className="text-lg font-bold text-gold">{message}</p>;
 }
