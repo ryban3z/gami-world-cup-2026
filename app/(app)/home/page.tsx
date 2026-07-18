@@ -73,6 +73,7 @@ export default async function HomePage({
 
   const state = (draft as DraftState | null) ?? null;
   const phase = state?.phase ?? "registration";
+  const isComplete = phase === "complete";
   const inRegistration = phase === "registration";
   const revealed = phase !== "registration" && phase !== "draft";
   const predictionsOpen = cfg?.predictions_open ?? false;
@@ -155,6 +156,22 @@ export default async function HomePage({
       )}
 
       {state && phase !== "draft" && <DraftStatus state={state} />}
+
+      {/* Tournament over — celebrate the champion and point to the full winners page. */}
+      {isComplete && summaryRows.length > 0 && (
+        <a
+          href="/results"
+          className={`block rounded-2xl border border-gold bg-gradient-to-b from-gold/15 to-panel p-5 text-center ${pressable}`}
+        >
+          <p className="text-xs font-bold uppercase tracking-widest text-gold">
+            {summaryRows.filter((r) => r.rank === 1).length > 1 ? "Co-champions" : "Pool champion"}
+          </p>
+          <p className="mt-1 text-2xl font-black text-white">
+            🏆 {summaryRows.filter((r) => r.rank === 1).map((r) => r.displayName).join(" & ")}
+          </p>
+          <p className="mt-2 text-sm text-gold underline">See the final results →</p>
+        </a>
+      )}
 
       {revealed && <LeaderboardSummary rows={summaryRows} />}
 

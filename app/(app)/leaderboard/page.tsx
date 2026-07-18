@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { branding } from "@/lib/config";
-import { pressableLink } from "@/lib/ui";
+import { pressableLink, ctaOutline } from "@/lib/ui";
 import type { DraftState } from "@/components/draft/DraftStatus";
 import { buildLeaderboard } from "@/lib/leaderboardView";
 import { loadTopScorers } from "@/lib/footballData";
@@ -75,6 +75,11 @@ export default async function LeaderboardPage() {
         </div>
         <a href="/home" className={`text-sm text-caption underline ${pressableLink}`}>← Home</a>
       </header>
+      {phase === "complete" && (
+        <a href="/results" className={`${ctaOutline}`}>
+          🏆 Final results &amp; winners →
+        </a>
+      )}
       <LeaderboardTable rows={rows} complete={phase === "complete"} />
       <TopScorers rows={topScorers} href="/predictions/status" />
     </main>
