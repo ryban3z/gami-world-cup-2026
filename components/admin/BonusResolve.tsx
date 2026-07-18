@@ -1,5 +1,6 @@
 import { pressable } from "@/lib/ui";
 import { resolveCategory } from "@/app/(app)/admin/actions";
+import { TEAM_PICK_KEYS } from "@/lib/scoring";
 import type { WoodenSpoonRow } from "@/lib/woodenSpoonView";
 import { woodenSpoonCandidates } from "@/lib/woodenSpoonView";
 
@@ -51,6 +52,7 @@ export default function BonusResolve({
   woodenSpoonStandings = [],
   savedId = null,
   locked = false,
+  teamNames = [],
 }: {
   categories: ResolveCategory[];
   woodenSpoonStandings?: WoodenSpoonRow[];
@@ -58,6 +60,10 @@ export default function BonusResolve({
   savedId?: string | null;
   // Tournament complete → answers frozen, forms become read-only.
   locked?: boolean;
+  // Seeded team names: team-pick categories resolve via a dropdown of these
+  // (scoring compares the answer against dropdown-entered picks, so a typed
+  // answer risks a silent mismatch).
+  teamNames?: string[];
 }) {
   return (
     <section id="resolve" className="rounded-xl border border-gold/40 bg-panel p-4">
@@ -103,8 +109,20 @@ export default function BonusResolve({
               ) : (
                 <form action={resolveCategory} className="flex items-center gap-2">
                   <input type="hidden" name="category_id" value={c.id} />
-                  <input name="answer" defaultValue={c.resolved_answer ?? spoonPrefill ?? ""} placeholder="winning answer"
-                    className="flex-1 rounded bg-navy p-1 text-white" aria-label="answer" />
+                  {TEAM_PICK_KEYS.has(c.key) && teamNames.length > 0 ? (
+                    // Team-pick answers come from the same seeded list the
+                    // managers picked from — no typed answer to mismatch.
+                    <select name="answer" defaultValue={c.resolved_answer ?? spoonPrefill ?? ""}
+                      className="flex-1 rounded bg-navy p-1 text-white" aria-label="answer">
+                      <option value="">— select team —</option>
+                      {teamNames.map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input name="answer" defaultValue={c.resolved_answer ?? spoonPrefill ?? ""} placeholder="winning answer"
+                      className="flex-1 rounded bg-navy p-1 text-white" aria-label="answer" />
+                  )}
                   <button className={`rounded-full border border-gold px-3 py-1 text-xs font-bold text-gold ${pressable}`}>
                     {c.resolved_answer ? "Update" : "Save"}
                   </button>

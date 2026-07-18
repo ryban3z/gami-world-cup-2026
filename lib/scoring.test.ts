@@ -261,6 +261,32 @@ describe("computeScores", () => {
   });
 });
 
+describe("computeScores — team-pick answer normalization", () => {
+  // The admin resolves team-pick categories via free input on /admin; a
+  // case/accent slip ("argentina", "Curacao") must not silently zero the bonus.
+  const bonusFor = (resolved: string, picks: Record<string, string>) => {
+    const out = computeScores(
+      scoreInput({
+        categories: [{ id: "c1", key: "tournament_winner", resolved_answer: resolved }],
+        predictions: Object.entries(picks).map(([user_id, pick_value]) => ({
+          user_id, category_id: "c1", pick_value,
+        })),
+      }),
+    );
+    return Object.fromEntries(out.map((s) => [s.user_id, s.breakdown.bonus]));
+  };
+
+  it("folds case and accents between pick and resolved answer", () => {
+    expect(bonusFor("argentina", { u1: "Argentina" })["u1"]).toBe(4);
+    expect(bonusFor("Curacao", { u1: "Curaçao" })["u1"]).toBe(4);
+  });
+
+  it("never goes fuzzy on team names (Austria ≠ Australia)", () => {
+    // playerNameMatches would accept this (2 edits at length 9) — team picks must not.
+    expect(bonusFor("Australia", { u1: "Austria" })["u1"]).toBe(0);
+  });
+});
+
 describe("computeScores — group-stage win points", () => {
   const base = (over: Partial<ComputeInput> = {}): ComputeInput => ({
     userIds: ["u1"],

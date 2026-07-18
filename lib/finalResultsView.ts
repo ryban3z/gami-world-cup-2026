@@ -7,7 +7,7 @@
 // managers nailed each resolved bonus category.
 
 import type { LeaderRow } from "@/lib/leaderboardView";
-import { TEAM_PICK_KEYS, playerNameMatches } from "@/lib/scoring";
+import { TEAM_PICK_KEYS, normalizeAnswer, playerNameMatches } from "@/lib/scoring";
 
 // ---- inputs (structural "lite" types, decoupled from component/db types) ----
 interface StandingLite {
@@ -122,8 +122,10 @@ export function buildFinalResults(
   }
 
   // Bonus highlights: for each resolved category, who picked the right answer.
-  // Reuses the scoring engine's matching rules (team-pick → exact id compare,
-  // free text → normalizeAnswer) so this never drifts from awarded points.
+  // Reuses the scoring engine's matching rules (team-pick → normalizeAnswer
+  // equality, free text → fuzzy playerNameMatches) so this never drifts from
+  // awarded points.
+  const teamByNormName = new Map(teams.map((t) => [normalizeAnswer(t.name), t]));
   const predsByCat = new Map<string, PredictionLite[]>();
   for (const p of predictions) {
     const list = predsByCat.get(p.category_id) ?? [];
@@ -135,11 +137,15 @@ export function buildFinalResults(
     if (!cat.resolved_answer) continue;
     const isTeamPick = TEAM_PICK_KEYS.has(cat.key);
     const answerRaw = cat.resolved_answer.trim();
-    const answer = isTeamPick ? teamById.get(answerRaw)?.name ?? answerRaw : answerRaw;
+    // Display the canonical seeded team name whether the answer was stored as a
+    // team id or a (possibly case/accent-slipped) typed name.
+    const answer = isTeamPick
+      ? (teamById.get(answerRaw) ?? teamByNormName.get(normalizeAnswer(answerRaw)))?.name ?? answerRaw
+      : answerRaw;
     const winnerIds = new Set<string>();
     for (const p of predsByCat.get(cat.id) ?? []) {
       const hit = isTeamPick
-        ? p.pick_value.trim() === answerRaw
+        ? normalizeAnswer(p.pick_value) === normalizeAnswer(answerRaw)
         : playerNameMatches(p.pick_value, cat.resolved_answer);
       if (hit) winnerIds.add(p.user_id);
     }

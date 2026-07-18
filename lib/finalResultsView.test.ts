@@ -150,6 +150,21 @@ describe("buildFinalResults", () => {
     ]);
   });
 
+  it("credits a team pick when the resolved answer differs in case/accents", () => {
+    const categories = [
+      { id: "c1", key: "tournament_winner", name: "Tournament Winner", resolved_answer: "argentina" },
+    ];
+    const predictions = [
+      { user_id: "u1", category_id: "c1", pick_value: "Argentina" }, // right despite the case slip
+      { user_id: "u2", category_id: "c1", pick_value: "France" }, // wrong
+    ];
+    const r = results([score("u1", 10), score("u2", 5)], "u1", [], [], categories, predictions);
+    // The displayed answer also canonicalizes to the seeded team name.
+    expect(r.bonusHighlights).toEqual([
+      { categoryName: "Tournament Winner", answer: "Argentina", winners: ["Ada"] },
+    ]);
+  });
+
   it("returns an empty winners list for a resolved category nobody called", () => {
     const categories = [
       { id: "c1", key: "tournament_winner", name: "Tournament Winner", resolved_answer: "t3" },

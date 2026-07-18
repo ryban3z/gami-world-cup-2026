@@ -40,7 +40,7 @@ export default async function AdminPage({
     .single();
   if (!me?.is_admin) redirect("/home");
 
-  const [{ data: cfg }, { data: draft }, { data: matchRows }, { data: cats }, { data: preds }] =
+  const [{ data: cfg }, { data: draft }, { data: matchRows }, { data: cats }, { data: preds }, { data: teamRows }] =
     await Promise.all([
       supabase.from("game_config").select("registration_open, predictions_open, last_results_sync_at").eq("id", 1).single(),
       supabase.rpc("draft_state"),
@@ -50,6 +50,7 @@ export default async function AdminPage({
         .order("kickoff_at"),
       supabase.from("bonus_categories").select("id, key, name, resolved_answer").eq("is_active", true).order("name"),
       supabase.from("bonus_predictions").select("category_id, pick_value").eq("is_active", true),
+      supabase.from("teams").select("name").order("name"),
     ]);
 
   const lastSync = cfg?.last_results_sync_at ?? null;
@@ -235,6 +236,7 @@ export default async function AdminPage({
         woodenSpoonStandings={spoonStandings}
         savedId={searchParams.saved ?? null}
         locked={phase === "complete"}
+        teamNames={(teamRows ?? []).map((t: any) => t.name)}
       />
       <MatchOverride matches={overrideMatches} />
     </main>

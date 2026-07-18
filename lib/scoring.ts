@@ -4,8 +4,10 @@
 export type MatchStage = "group" | "r32" | "r16" | "qf" | "sf" | "third_place" | "final";
 export type OwnerPhase = "group" | "knockout";
 
-// Team-pick categories use a dropdown of seeded team names (safe to compare directly);
-// the rest are free text (normalized before comparison). Mirrors PredictionForm.
+// Team-pick categories use a dropdown of seeded team names, compared via
+// normalizeAnswer (case/accent-folded, never fuzzy — the admin resolves the
+// answer by hand); the rest are free text (fuzzy player-name matching).
+// Mirrors PredictionForm.
 export const TEAM_PICK_KEYS = new Set(["tournament_winner", "runner_up", "wooden_spoon"]);
 
 const STAGE_RANK: Record<MatchStage, number> = {
@@ -96,7 +98,8 @@ function normalizePlayerName(s: string): string {
 //   2. surnames (last token) match exactly or within typo tolerance — this is
 //      what lets a full name match a bare surname, and forgives surname typos;
 //   3. the whole strings are within typo tolerance.
-// Team-pick categories do NOT use this — they stay exact (see TEAM_PICK_KEYS).
+// Team-pick categories do NOT use this — they compare via normalizeAnswer only
+// (case/accent-folded but never fuzzy: "Austria" must not match "Australia").
 export function playerNameMatches(pick: string, answer: string): boolean {
   const a = normalizePlayerName(pick);
   const b = normalizePlayerName(answer);
@@ -392,7 +395,7 @@ export function computeScores(input: ComputeInput): ComputedScore[] {
     if (seen.has(key)) continue;
     const isTeamPick = TEAM_PICK_KEYS.has(cat.key);
     const match = isTeamPick
-      ? p.pick_value.trim() === cat.resolved_answer.trim()
+      ? normalizeAnswer(p.pick_value) === normalizeAnswer(cat.resolved_answer)
       : playerNameMatches(p.pick_value, cat.resolved_answer);
     if (match) {
       seen.add(key);
