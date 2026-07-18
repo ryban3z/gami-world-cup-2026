@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  normalizeAnswer, deriveStandings, deriveGroupQualified, computeScores,
+  normalizeAnswer, playerNameMatches, deriveStandings, deriveGroupQualified, computeScores,
   type MatchRow, type ComputeInput,
 } from "@/lib/scoring";
 
@@ -10,6 +10,48 @@ describe("normalizeAnswer", () => {
     expect(normalizeAnswer("  MBAPPE  ")).toBe("mbappe");
     expect(normalizeAnswer("L. Messi")).toBe("l messi");
     expect(normalizeAnswer("Mbappe")).toBe(normalizeAnswer("Mbappé"));
+  });
+});
+
+describe("playerNameMatches", () => {
+  // pick first, resolved answer second (order shouldn't matter).
+  it("matches exact / case / accent (existing behaviour)", () => {
+    expect(playerNameMatches("mbappe", "Mbappé")).toBe(true);
+    expect(playerNameMatches("Lionel Messi", "lionel messi")).toBe(true);
+  });
+
+  it("matches on last name when one side omits the first name", () => {
+    expect(playerNameMatches("Kane", "Harry Kane")).toBe(true);
+    expect(playerNameMatches("Harry Kane", "Kane")).toBe(true);
+    expect(playerNameMatches("Kylian Mbappé", "Mbappe")).toBe(true);
+    expect(playerNameMatches("Lionel Messi", "Messi")).toBe(true);
+  });
+
+  it("tolerates surname typos via last-name match", () => {
+    // Christians Ronaldo -> Cristiano Ronaldo (surname exact)
+    expect(playerNameMatches("Christians Ronaldo", "Cristiano Ronaldo")).toBe(true);
+    // Fernandez vs Fernandes (distance 1)
+    expect(playerNameMatches("Bruno Fernandez", "Bruno Fernandes")).toBe(true);
+    // De Bruyne surname intact despite a mangled middle
+    expect(playerNameMatches("Kevin Dr Bruyne", "Kevin De Bruyne")).toBe(true);
+  });
+
+  it("tolerates whole-name typos (generous: 2 edits at 5+ chars)", () => {
+    expect(playerNameMatches("Mbappve", "Mbappe")).toBe(true); // 1 edit
+    expect(playerNameMatches("Courtios", "Courtois")).toBe(true); // transposition, 2 edits
+  });
+
+  it("strips parenthetical disambiguation before matching", () => {
+    expect(playerNameMatches("Martinez (Argentina)", "Emiliano Martínez")).toBe(true);
+    expect(playerNameMatches("Simon", "Unai Simón")).toBe(true);
+  });
+
+  it("rejects clearly different names", () => {
+    expect(playerNameMatches("Haaland", "Mbappe")).toBe(false);
+    expect(playerNameMatches("Kane", "Son")).toBe(false);
+    expect(playerNameMatches("Pedri", "Gavi")).toBe(false);
+    // different players, different surnames — must not match
+    expect(playerNameMatches("Harry Kane", "Harry Maguire")).toBe(false);
   });
 });
 

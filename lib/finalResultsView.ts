@@ -7,7 +7,7 @@
 // managers nailed each resolved bonus category.
 
 import type { LeaderRow } from "@/lib/leaderboardView";
-import { TEAM_PICK_KEYS, normalizeAnswer } from "@/lib/scoring";
+import { TEAM_PICK_KEYS, playerNameMatches } from "@/lib/scoring";
 
 // ---- inputs (structural "lite" types, decoupled from component/db types) ----
 interface StandingLite {
@@ -140,7 +140,7 @@ export function buildFinalResults(
     for (const p of predsByCat.get(cat.id) ?? []) {
       const hit = isTeamPick
         ? p.pick_value.trim() === answerRaw
-        : normalizeAnswer(p.pick_value) === normalizeAnswer(cat.resolved_answer);
+        : playerNameMatches(p.pick_value, cat.resolved_answer);
       if (hit) winnerIds.add(p.user_id);
     }
     const winners = [...winnerIds]

@@ -128,6 +128,28 @@ describe("buildFinalResults", () => {
     ]);
   });
 
+  it("credits last-name and typo variants of a free-text player pick", () => {
+    const categories = [
+      { id: "c2", key: "golden_boot", name: "Golden Boot", resolved_answer: "Harry Kane" },
+    ];
+    const predictions = [
+      { user_id: "u1", category_id: "c2", pick_value: "Kane" }, // surname only → hit
+      { user_id: "u2", category_id: "c2", pick_value: "Harry Kane" }, // exact → hit
+      { user_id: "u3", category_id: "c2", pick_value: "Mbappe" }, // wrong → miss
+    ];
+    const r = results(
+      [score("u1", 10), score("u2", 5), score("u3", 5)],
+      "u1",
+      [],
+      [],
+      categories,
+      predictions,
+    );
+    expect(r.bonusHighlights).toEqual([
+      { categoryName: "Golden Boot", answer: "Harry Kane", winners: ["Ada", "Bob"] },
+    ]);
+  });
+
   it("returns an empty winners list for a resolved category nobody called", () => {
     const categories = [
       { id: "c1", key: "tournament_winner", name: "Tournament Winner", resolved_answer: "t3" },

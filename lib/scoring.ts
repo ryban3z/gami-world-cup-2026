@@ -53,6 +53,61 @@ export function normalizeAnswer(s: string): string {
     .replace(/\s+/g, " ");
 }
 
+// Levenshtein edit distance (insert/delete/substitute = 1 each). Small strings
+// only — player names — so the simple two-row DP is plenty.
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  let curr = new Array<number>(b.length + 1);
+  for (let i = 1; i <= a.length; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[b.length];
+}
+
+// Generous typo tolerance (the pool chose to favour catching real misspellings
+// over avoiding the odd false positive on short surnames): 2 edits once the
+// longer string reaches 5 chars, 1 edit for 3–4, exact below 3.
+function withinTypoTolerance(a: string, b: string): boolean {
+  const len = Math.max(a.length, b.length);
+  const allowed = len >= 5 ? 2 : len >= 3 ? 1 : 0;
+  return levenshtein(a, b) <= allowed;
+}
+
+// Normalize a free-typed player name for matching: drop parenthetical
+// disambiguation ("Martinez (Argentina)" -> "Martinez") then run the shared
+// accent/case/punctuation normalizer. Returns "" for empty/whitespace picks.
+function normalizePlayerName(s: string): string {
+  return normalizeAnswer(s.replace(/\([^)]*\)/g, " "));
+}
+
+// Fuzzy match for free-typed player-name bonus categories (Golden Boot, etc.).
+// Managers write the same player many ways — "Kane" / "Harry Kane", "Mbappe" /
+// "Kylian Mbappé", "Fernandez" for "Fernandes" — so we accept a match when ANY
+// of these hold on the normalized forms:
+//   1. exact equality (case/accent/punctuation already folded);
+//   2. surnames (last token) match exactly or within typo tolerance — this is
+//      what lets a full name match a bare surname, and forgives surname typos;
+//   3. the whole strings are within typo tolerance.
+// Team-pick categories do NOT use this — they stay exact (see TEAM_PICK_KEYS).
+export function playerNameMatches(pick: string, answer: string): boolean {
+  const a = normalizePlayerName(pick);
+  const b = normalizePlayerName(answer);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const aSurname = a.slice(a.lastIndexOf(" ") + 1);
+  const bSurname = b.slice(b.lastIndexOf(" ") + 1);
+  if (withinTypoTolerance(aSurname, bSurname)) return true;
+  return withinTypoTolerance(a, b);
+}
+
 // A team has clinched a top-2 group finish — and therefore qualification — once
 // it is mathematically guaranteed to finish 1st or 2nd no matter how the
 // remaining group games go, so the qualify reward can be credited mid-group-stage,
@@ -338,7 +393,7 @@ export function computeScores(input: ComputeInput): ComputedScore[] {
     const isTeamPick = TEAM_PICK_KEYS.has(cat.key);
     const match = isTeamPick
       ? p.pick_value.trim() === cat.resolved_answer.trim()
-      : normalizeAnswer(p.pick_value) === normalizeAnswer(cat.resolved_answer);
+      : playerNameMatches(p.pick_value, cat.resolved_answer);
     if (match) {
       seen.add(key);
       ensure(p.user_id).bonus += config.bonus_correct_pts;
