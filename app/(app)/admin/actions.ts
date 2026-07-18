@@ -87,6 +87,25 @@ export async function resolveKnockoutRealloc() {
   done();
 }
 
+// Close out the tournament: recalc once more so the final result + champion
+// bonus are baked in, then flip knockout_locked → complete (the RPC guards that
+// the final has actually been played). This unlocks the /results winners view
+// and the leaderboard 🏆. One-way.
+export async function completeTournament() {
+  await requireAdmin();
+  const supabase = createClient();
+  try {
+    await runRecalc();
+  } catch (e) {
+    back(e instanceof Error ? e.message : String(e));
+  }
+  const { error } = await supabase.rpc("complete_tournament");
+  if (error) back(error.message);
+  revalidatePath("/leaderboard");
+  revalidatePath("/results");
+  done();
+}
+
 export async function refreshResults() {
   await requireAdmin();
   // Server-side cooldown — can't be bypassed by double-clicking the button.

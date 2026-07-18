@@ -16,6 +16,7 @@ import {
   lockPredictions,
   openKnockoutRealloc,
   resolveKnockoutRealloc,
+  completeTournament,
   refreshResults,
 } from "./actions";
 
@@ -194,6 +195,20 @@ export default async function AdminPage({
             pendingLabel="Resolving…"
             confirmPrompt="Close the window: snapshot the order from the FINAL standings, auto-allocate R32 free agents worst-placed-first, apply wildcards, lock, and reveal. Refresh results first. Can't be undone. Confirm?"
             description="Snapshots final standings, awards top still-available R32 picks, applies wildcards, locks."
+          />
+        </section>
+      )}
+
+      {phase === "knockout_locked" && (
+        <section className="rounded-xl border border-gold/40 bg-panel p-4">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-gold">Close out</h2>
+          <ConfirmAction
+            action={completeTournament}
+            tone="danger"
+            label="Complete tournament"
+            pendingLabel="Completing…"
+            confirmPrompt="Do this after the final: refresh results and resolve the Tournament Winner / Runner-Up / Wooden Spoon bonus categories first, then complete. Freezes final standings and reveals the winners. Can't be undone. Confirm?"
+            description="Recomputes final scores, then reveals the /results winners page + leaderboard 🏆."
           />
         </section>
       )}

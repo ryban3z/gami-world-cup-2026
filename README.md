@@ -69,6 +69,7 @@ The landing page runs with no backend. The core app (gate + auth + data) needs a
    29. `supabase/migrations/0031_resolve_where_clause.sql` — fixes `resolve_knockout_realloc()` failing with "UPDATE requires a WHERE clause" at the admin **Resolve & lock knockouts** button: the idempotent re-pend of nominations was written WHERE-less, which the live RPC rejects under `sql_safe_updates`. Re-`create or replace`s the RPC with the reset scoped to `where status <> 'pending'` (idempotent; everything else byte-identical to `0030`). Apply this and re-try the resolve.
    30. `supabase/migrations/0032_draft_state_knockout_rosters.sql` — makes the home dashboard roster cards (the leaderboard "My teams" panel + manager profiles) reflect the **post-swap** teams once the knockout swap is locked. `draft_state()`'s `rosters` + `my_team_ids` were hard-wired to the group-stage draft, so a manager who swapped never saw the team they picked up. Re-`create or replace`s the RPC to read `phase='knockout'` ownership in the `knockout_locked` / `complete` phases (group otherwise), and adds per-roster `claimed_team_ids` (badge picked-up free agents "New") + `dropped_team_ids` (show given-up teams dimmed/struck-through, not silently gone). **Display only** — group scoring is untouched. Idempotent; apply any time after `0030`/`0031` (re-run the resolve isn't needed — this only changes the read path).
    31. `supabase/migrations/0033_match_penalties.sql` — fixes penalty-shootout reporting: knockout matches decided on penalties showed the shootout-inclusive aggregate as the result (a 1–1 decided 4–3 on pens rendered as "5–4"). Adds nullable `matches.home_penalties` / `away_penalties` (the ingest now peels the shootout out of football-data's `fullTime` and stores it separately; the match strip shows "1–1" with "4–3 on penalties" beneath) and extends the penalties-aware override RPC (`admin_override_match`, signature change from `0025`) with optional `p_home_penalties` / `p_away_penalties`. **Display only** — scoring runs off `winner_team_id`, untouched. Apply alongside the matching app code, then re-run recalc / re-ingest to backfill stored knockout scores.
+   32. `supabase/migrations/0034_complete_tournament.sql` — the final phase transition, `knockout_locked → complete`. The `complete` phase existed in the enum since `0001` but nothing ever set it, so the pool could never be closed out. Adds the admin-only `complete_tournament()` RPC (guards that the final has been played), which the **admin "Complete tournament" button**, the `/results` winners page, and the leaderboard 🏆 read off. Scoring isn't recomputed here (the admin action runs a final recalc first). **Apply with (or before) deploying the matching app code.**
 4. **Disable email confirmation:** Supabase → Authentication → Sign In / Providers → Email → turn **off "Confirm email"** (so friends can register and log in immediately without an SMTP setup).
 5. **Make yourself admin** (after registering): in the SQL Editor, run
    `update profiles set is_admin = true where display_name = '<your name>';`
@@ -105,6 +106,17 @@ Two parts — **clean up** the test state first, then **run the game** via the a
 7. Run the snake draft. Players pick on their turn; use **Auto-pick for {player}** only after nudging anyone who stalls. The draft auto-reveals (phase → `group_locked`) once the last pick is in.
 8. Players fill **bonus predictions** at `/predictions` (all 8 categories) — editable any time until lock.
 9. At kickoff (**2026-06-11**), **Lock predictions** — closes the window and reveals everyone's picks. ⚠️ Can't be undone.
+
+**C. The knockout swap (during the group stage):**
+
+10. A few days before the group stage ends, **Open knockout re-allocation** — opens the blind, editable one-team swap + wildcard window. Managers submit at `/knockout`.
+11. Before the first R32 game, **Refresh results now** (so the pick order snapshots off the final standings), then **Resolve & lock knockouts** — auto-allocates free agents worst-placed-first, applies wildcards, and locks (`phase → knockout_locked`). ⚠️ Can't be undone.
+
+**D. Closing it out (after the final):**
+
+12. Once the final is played, **Refresh results now** — ingests the final score; the champion bonus (`+6`) and `is_champion` standings fall out of the idempotent recalc automatically. (Use the per-match override on `/admin` if football-data.org is slow.)
+13. In **Resolve bonus categories**, resolve the three post-final team picks — **Tournament Winner**, **Runner-Up**, and **Wooden Spoon** (the panel prefills the worst team) — plus any still-open free-text awards (Golden Boot, etc.).
+14. **Complete tournament** (shown once you're in `knockout_locked`) — runs a final recalc and flips `phase → complete`, freezing the standings. This lights up the **`/results` winners page** (champion, podium, World Cup winners + owner, wooden-spoon manager, bonus callouts), the 🏆 on the leaderboard, and the champion banner on `/home`. ⚠️ Can't be undone.
 
 ## Deploy (Vercel)
 

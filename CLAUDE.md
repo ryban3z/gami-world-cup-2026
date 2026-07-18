@@ -2,9 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project status: app built through the knockout re-allocation
+## Project status: app built through the tournament close-out
 
-The **landing page**, the entire **pre-tournament app**, the **in-tournament scoring stack**, and the **knockout re-allocation + wildcard** are built and deployed (Vercel auto-deploys from `main`). Done:
+The **landing page**, the entire **pre-tournament app**, the **in-tournament scoring stack**, the **knockout re-allocation + wildcard**, and the **tournament close-out** are built and deployed (Vercel auto-deploys from `main`). Done:
 - Supabase schema + RLS, seeded teams + **8 bonus categories**, shared-password gate, and **display-name + password auth** (synthetic email, no real email — `lib/identity.ts`) (Plan 1 — `docs/superpowers/plans/2026-06-02-pre-tournament-foundation.md`).
 - The **snake-draft engine + draft-night dashboard** (Plan 2) and **bonus predictions + kickoff lock** (Plan 3).
 - An **`/admin` control panel** (`app/(app)/admin/`) that drives every phase transition — open/close registration, start draft, auto-pick, lock predictions — each behind a two-step confirm. Admins reach it via a "⚙ Admin" link on `/home`; non-admins are redirected away. It also hosts the results tools: manual refresh (30s cooldown), per-match override (penalties-aware, `0025`), and bonus-category resolution.
@@ -12,7 +12,9 @@ The **landing page**, the entire **pre-tournament app**, the **in-tournament sco
 - The **live dashboard** (`docs/superpowers/plans/2026-06-07-live-dashboard.md`): `/leaderboard` + home summary + match strip (`lib/leaderboardView.ts`), and gated **manager profile pages** (`/managers/[id]`).
 - The **knockout re-allocation + wildcard** (`docs/superpowers/plans/2026-06-23-knockout-realloc.md`, migration `0030`): the `knockout_realloc` phase, opened **during the group stage** (the gap before R32 is too short). Managers submit a blind, **editable** one-team swap (drop one + ranked top-3 wishlist of **undrafted** teams) and/or a **pending, editable** wildcard (change a single bonus pick); the admin opens the window and resolves it — resolve **snapshots the reverse-standings pick order from the final standings**, awards each manager their top still-available pick **that actually reached R32**, materializes `phase='knockout'` ownership, applies the pending wildcards, and locks. Player UI at `app/(app)/knockout/`, pick-order math in `lib/knockoutView.ts`, RPCs + repurposed `swap_nominations` + `wildcard_choices` in `0030`.
 
-**Still to build (optional): the in-tournament bonus mini-games** sketched in the spec. The go-live runbook is in `README.md`. See `docs/superpowers/specs/2026-05-28-world-cup-pool-design.md` and the `docs/superpowers/plans/` files.
+- The **tournament close-out** (migration `0034`): the final `knockout_locked → complete` transition — previously the `complete` phase existed in the enum but nothing set it, so the pool couldn't be closed out. Admin-only `complete_tournament()` RPC (guards the final was played) behind a **"Complete tournament"** button on `/admin`; the server action runs a final recalc first (the champion `+6` bonus + `is_champion` fall out of the idempotent recalc). Lights up the celebratory **`/results` winners page** (`app/(app)/results/`, pure logic + tests in `lib/finalResultsView.ts`, `components/results/WinnersBoard.tsx`): champion/podium, World Cup winning team + its knockout owner, wooden-spoon manager (last place), and per-category bonus-pick callouts — plus the leaderboard 🏆 (already wired via `LeaderboardTable`'s `complete` prop) and a champion banner on `/home`.
+
+**Still to build (optional): the in-tournament bonus mini-games** sketched in the spec. The go-live runbook (through the close-out) is in `README.md`. See `docs/superpowers/specs/2026-05-28-world-cup-pool-design.md` and the `docs/superpowers/plans/` files.
 
 Setup for the core app lives in `README.md` (env vars, applying migrations, seeding teams). The data model is single-tenant by design — a second group is a separate deploy (branding + site password come from env).
 
