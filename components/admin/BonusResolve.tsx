@@ -49,16 +49,28 @@ function WoodenSpoonHint({ standings }: { standings: WoodenSpoonRow[] }) {
 export default function BonusResolve({
   categories,
   woodenSpoonStandings = [],
+  savedId = null,
+  locked = false,
 }: {
   categories: ResolveCategory[];
   woodenSpoonStandings?: WoodenSpoonRow[];
+  // Category id that was just saved (from ?saved=…) — flags it with a tick.
+  savedId?: string | null;
+  // Tournament complete → answers frozen, forms become read-only.
+  locked?: boolean;
 }) {
   return (
-    <section className="rounded-xl border border-gold/40 bg-panel p-4">
-      <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-gold">Resolve bonus categories</h2>
+    <section id="resolve" className="rounded-xl border border-gold/40 bg-panel p-4">
+      <h2 className="mb-1 text-xs font-bold uppercase tracking-wide text-gold">Resolve bonus categories</h2>
+      <p className="mb-3 text-xs text-caption">
+        {locked
+          ? "Tournament completed — answers are locked."
+          : "Answers save immediately and stay editable until you complete the tournament."}
+      </p>
       <ul className="flex flex-col gap-4">
         {categories.map((c) => {
           const isSpoon = c.key === "wooden_spoon";
+          const justSaved = savedId === c.id;
           // Prefill the answer with the clear computed worst team (single
           // candidate) when the category isn't resolved yet; the admin can override.
           const spoonPrefill =
@@ -67,22 +79,37 @@ export default function BonusResolve({
               : null;
           return (
             <li key={c.id}>
-              <p className="mb-1 text-sm text-white">
-                {c.name}{" "}
+              <p className="mb-1 flex flex-wrap items-center gap-2 text-sm text-white">
+                <span>{c.name}</span>
                 {c.resolved_answer && <span className="text-caption">→ {c.resolved_answer}</span>}
+                {justSaved && (
+                  <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-bold text-green-300">
+                    Saved ✓
+                  </span>
+                )}
               </p>
-              {isSpoon && <WoodenSpoonHint standings={woodenSpoonStandings} />}
-              {c.suggestions.length > 0 && (
+              {isSpoon && !locked && <WoodenSpoonHint standings={woodenSpoonStandings} />}
+              {c.suggestions.length > 0 && !locked && (
                 <p className="mb-2 text-xs text-caption">Submitted: {c.suggestions.join(", ")}</p>
               )}
-              <form action={resolveCategory} className="flex items-center gap-2">
-                <input type="hidden" name="category_id" value={c.id} />
-                <input name="answer" defaultValue={c.resolved_answer ?? spoonPrefill ?? ""} placeholder="winning answer"
-                  className="flex-1 rounded bg-navy p-1 text-white" aria-label="answer" />
-                <button className={`rounded-full border border-gold px-3 py-1 text-xs font-bold text-gold ${pressable}`}>
-                  Save
-                </button>
-              </form>
+              {locked ? (
+                <p className="text-sm text-caption">
+                  {c.resolved_answer ? (
+                    <>Final answer: <span className="text-white">{c.resolved_answer}</span></>
+                  ) : (
+                    "Left unresolved."
+                  )}
+                </p>
+              ) : (
+                <form action={resolveCategory} className="flex items-center gap-2">
+                  <input type="hidden" name="category_id" value={c.id} />
+                  <input name="answer" defaultValue={c.resolved_answer ?? spoonPrefill ?? ""} placeholder="winning answer"
+                    className="flex-1 rounded bg-navy p-1 text-white" aria-label="answer" />
+                  <button className={`rounded-full border border-gold px-3 py-1 text-xs font-bold text-gold ${pressable}`}>
+                    {c.resolved_answer ? "Update" : "Save"}
+                  </button>
+                </form>
+              )}
             </li>
           );
         })}

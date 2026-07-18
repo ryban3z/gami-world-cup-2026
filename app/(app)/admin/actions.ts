@@ -152,11 +152,18 @@ export async function overrideMatch(formData: FormData) {
 export async function resolveCategory(formData: FormData) {
   await requireAdmin();
   const supabase = createClient();
+  const categoryId = String(formData.get("category_id"));
   const { error } = await supabase.rpc("admin_resolve_category", {
-    p_category_id: String(formData.get("category_id")),
+    p_category_id: categoryId,
     p_answer: String(formData.get("answer") ?? ""),
   });
   if (error) back(error.message);
+  // Resolving a category changes bonus scores — rebuild everywhere they surface.
   try { await runRecalc(); } catch (e) { back(e instanceof Error ? e.message : String(e)); }
-  done();
+  revalidatePath("/admin");
+  revalidatePath("/home");
+  revalidatePath("/leaderboard");
+  revalidatePath("/results");
+  // Redirect back with a marker so the panel confirms which category just saved.
+  redirect(`/admin?saved=${encodeURIComponent(categoryId)}#resolve`);
 }

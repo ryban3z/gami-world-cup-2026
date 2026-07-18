@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic"; // always reflect live game state
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: { error?: string; saved?: string };
 }) {
   const supabase = createClient();
   const {
@@ -230,7 +230,12 @@ export default async function AdminPage({
         </p>
       </section>
 
-      <BonusResolve categories={resolveCategories} woodenSpoonStandings={spoonStandings} />
+      <BonusResolve
+        categories={resolveCategories}
+        woodenSpoonStandings={spoonStandings}
+        savedId={searchParams.saved ?? null}
+        locked={phase === "complete"}
+      />
       <MatchOverride matches={overrideMatches} />
     </main>
   );
