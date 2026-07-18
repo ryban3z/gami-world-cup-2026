@@ -87,6 +87,11 @@ export default async function HomePage({
   // aren't clickable and the /managers/[id] route redirects home. Admins get an
   // early bypass so they can preview/proofread every profile before the reveal.
   const isAdmin = state?.is_admin ?? false;
+  // The final is upon us: the trophy match exists and hasn't finished yet.
+  // currentKnockoutRound only returns "final" once the semis are done and the
+  // final is still pending, so this lights up exactly for the last game.
+  const knockoutRound = currentKnockoutRound(matches ?? []);
+  const finalIsHere = phase === "knockout_locked" && knockoutRound === "final";
   const predictionsLocked = cfg?.predictions_locked_at != null;
   const profilesUnlocked = predictionsLocked || isAdmin;
   const list = players ?? [];
@@ -146,13 +151,32 @@ export default async function HomePage({
       </header>
 
       {state && (
-        <PhaseBanner steps={phaseSteps(phase, currentKnockoutRound(matches ?? []))} />
+        <PhaseBanner steps={phaseSteps(phase, knockoutRound)} />
       )}
 
       {searchParams.error && (
         <p className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
           {searchParams.error}
         </p>
+      )}
+
+      {/* The final is here — dramatic call-to-arms above the leaderboard. Only
+          lights up for the trophy match itself. */}
+      {finalIsHere && (
+        <a
+          href="/bracket"
+          className={`block rounded-2xl border border-gold bg-gradient-to-b from-gold/20 to-panel p-5 text-center ${pressable}`}
+        >
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">
+            This is it
+          </p>
+          <p className="mt-1 text-2xl font-black text-white">🏆 THE FINAL IS HERE</p>
+          <p className="mt-2 text-sm text-bodytext">
+            Two teams left. One trophy. Ninety minutes to settle the whole pool —
+            if your team&apos;s still standing, everyone else is just watching.
+          </p>
+          <p className="mt-3 text-sm text-gold underline">See who&apos;s left standing →</p>
+        </a>
       )}
 
       {state && phase !== "draft" && <DraftStatus state={state} />}
